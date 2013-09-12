@@ -1,10 +1,20 @@
 package trie
 
 import (
+	"bufio"
+	"bytes"
+	"encoding/gob"
 	"fmt"
+	"os"
+	// "sort"
 	"strings"
 	"sync"
+	"time"
 )
+
+func init() {
+	// gob.Register(&trie.EnDecodeTrie{})
+}
 
 type Trie struct {
 	Root *Branch
@@ -42,6 +52,55 @@ func (t *Trie) Members() []string {
 
 func (t *Trie) PrefixMembers(prefix string) []string {
 	return t.Root.PrefixMembers([]byte{}, []byte(prefix))
+}
+
+func (t *Trie) DumpToFile(fname string) (err error) {
+	entries := t.Members()
+	// sort.Sort(sort.Reverse(sort.StringSlice(entries)))
+	// fmt.Println(entries)
+
+	buf := new(bytes.Buffer)
+	enc := gob.NewEncoder(buf)
+	if err := enc.Encode(entries); err != nil {
+		fmt.Println(err)
+	}
+
+	f, err := os.Create(fname)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer f.Close()
+	w := bufio.NewWriter(f)
+	bl, err := w.Write(buf.Bytes())
+	fmt.Printf("wrote %d bytes\n", bl)
+	w.Flush()
+	return
+}
+
+func LoadFromFile(fname string) (tr *Trie, err error) {
+	f, err := os.Open(fname)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer f.Close()
+	buf := bufio.NewReader(f)
+
+	var entries []string
+	dec := gob.NewDecoder(buf)
+	if err = dec.Decode(&entries); err != nil {
+		fmt.Println("decoding error:", err)
+	}
+
+	// fmt.Println(entries)
+
+	startTime := time.Now()
+	tr = NewTrie()
+	for _, word := range entries {
+		tr.Add(word)
+	}
+	fmt.Printf("adding words to index took: %v\n", time.Since(startTime))
+
+	return
 }
 
 type Branch struct {
@@ -192,8 +251,46 @@ func (b *Branch) PrefixMembers(branchPrefix []byte, searchPrefix []byte) (member
 }
 
 func (b *Branch) Delete(entry []byte) (deleted bool) {
-	// leafLen := len(b.LeafValue)
-	// entryLen := len(entry)
+	leafLen := len(b.LeafValue)
+	entryLen := len(entry)
+
+	// we are at a leaf end.
+	if b.End && entryLen == leafLen {
+		for i, pb := range entry {
+			if pb != b.LeafValue[i] {
+				return false
+			}
+		}
+		if len(b.Branches) > 0 {
+			b.End = false
+		}
+		return true
+	}
+
+	// does the leaf match
+	if leafLen > 0 {
+		if entryLen <= leafLen {
+			for i, pb := range entry {
+				if pb != b.LeafValue[i] {
+					return false
+				}
+			}
+		} else {
+			for i, lb := range b.LeafValue {
+				if entry[i] != lb {
+					return false
+				}
+			}
+		}
+	}
+
+	if entryLen > leafLen {
+		if br, present := b.Branches[entry[leafLen]]; present {
+			return br.Has(entry[leafLen+1:])
+		} else {
+			return false
+		}
+	}
 
 	return
 }
@@ -256,3 +353,41 @@ func (b *Branch) Dump(depth int) (out string) {
 func (b *Branch) PrintDump() {
 	fmt.Printf("\n\n%s\n\n", b.Dump(0))
 }
+
+// persistence
+
+// type EnDecodeTrie struct {
+// 	Root *EnDecodeBranch
+// }
+
+// type EnDecodeBranch struct {
+// 	Branches  map[byte]*Branch
+// 	LeafValue []byte // tail end
+// 	End       bool
+// }
+
+// func (t *Trie) FileDump(fname string) {
+
+// 	edTrie := &EnDecodeTrie{
+// 	Root: &EnDecodeBranch{
+// 	Branches
+// 	}
+// 	}
+
+// 	buf := new(bytes.Buffer)
+// 	enc := gob.NewEncoder(buf)
+// 	if err := enc.Encode(tr); err != nil {
+// 		log.Println(err)
+// 	}
+
+// 	f, err := os.Create(fname)
+// 	if err != nil {
+// 		log.Println(err)
+// 	}
+// 	defer f.Close()
+
+// 	w := bufio.NewWriter(f)
+// 	blength, err := w.Write(buf.Bytes())
+// 	log.Printf("wrote %d bytes\n", blength)
+// 	w.Flush()
+// }
