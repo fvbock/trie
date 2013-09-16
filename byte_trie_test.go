@@ -1,11 +1,16 @@
 package trie
 
 import (
+	"runtime"
 	"sync"
 	"testing"
 )
 
-func TestAdd(t *testing.T) {
+func init() {
+	runtime.GOMAXPROCS(1)
+}
+
+func _TestAdd(t *testing.T) {
 	tr := NewTrie()
 	t.Logf("Empty Has('foo')? %v", tr.Has("foo"))
 
@@ -57,7 +62,54 @@ func TestAdd(t *testing.T) {
 	// t.Logf("order does not matter: %v\n", tr3.Root.Dump(0) == tr4.Root.Dump(0))
 }
 
-func TestMultiAdd(t *testing.T) {
+func TestDelete(t *testing.T) {
+	tr := NewTrie()
+
+	tr.Add("foo")
+	tr.Add("foodie")
+	tr.Add("foods")
+	tr.Add("foodchain")
+	tr.Add("foodcrave")
+	tr.Add("food")
+
+	tr.PrintDump()
+
+	t.Log("----------")
+	var del bool
+	t.Log(tr.Members())
+
+	del = tr.Delete("foodcrave")
+	t.Logf("deleted foodcrave? %v\n", del)
+	t.Log(tr.Members())
+
+	del = tr.Delete("food")
+	t.Logf("deleted food? %v\n", del)
+	t.Log(tr.Members())
+
+	// tr.PrintDump()
+
+	// tr.PrintDump()
+
+	del = tr.Delete("foodie")
+	t.Logf("deleted? %v\n", del)
+	t.Log(tr.Members())
+
+	del = tr.Delete("foods")
+	t.Logf("deleted? %v\n", del)
+	t.Log(tr.Members())
+
+	// del = tr.Delete("foodchain")
+	// t.Logf("deleted? %v\n", del)
+	// t.Log(tr.Members())
+
+	// del = tr.Delete("foo")
+	// t.Logf("deleted? %v\n", del)
+	// t.Log(tr.Members())
+
+	tr.PrintDump()
+}
+
+func _TestMultiAdd(t *testing.T) {
 	tr := NewTrie()
 	words := []string{"foodie", "foods", "foodchain", "foodcrave", "food", "人", "日本", "日本語学校", "学校", "日本語"}
 	wg := sync.WaitGroup{}

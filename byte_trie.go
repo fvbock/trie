@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	// "sort"
+	"log"
 	"strings"
 	"sync"
 	"time"
@@ -31,7 +32,10 @@ func (t *Trie) Add(entry string) {
 }
 
 func (t *Trie) Delete(entry string) bool {
-	return t.Root.Delete([]byte(entry))
+	if len(entry) == 0 {
+		return false
+	}
+	return t.Root.delete([]byte(entry))
 }
 
 func (t *Trie) Dump() {
@@ -250,49 +254,124 @@ func (b *Branch) PrefixMembers(branchPrefix []byte, searchPrefix []byte) (member
 	return
 }
 
-func (b *Branch) Delete(entry []byte) (deleted bool) {
+func (b *Branch) HasBranches() bool {
+	return len(b.Branches) == 0
+}
+
+func (b *Branch) HasBranch(idx byte) bool {
+	if _, present := b.Branches[idx]; present {
+		return true
+	}
+	return false
+}
+
+func (b *Branch) MatchesLeaf(entry []byte) bool {
 	leafLen := len(b.LeafValue)
 	entryLen := len(entry)
 
-	// we are at a leaf end.
-	if b.End && entryLen == leafLen {
-		for i, pb := range entry {
-			if pb != b.LeafValue[i] {
-				return false
-			}
-		}
-		if len(b.Branches) > 0 {
-			b.End = false
-		}
+	if leafLen == 0 && entryLen == 0 {
 		return true
 	}
 
-	// does the leaf match
-	if leafLen > 0 {
-		if entryLen <= leafLen {
-			for i, pb := range entry {
-				if pb != b.LeafValue[i] {
-					return false
-				}
+	if leafLen == entryLen {
+		for i, lb := range b.LeafValue {
+			if entry[i] != lb {
+				return false
 			}
-		} else {
+		}
+	}
+	return true
+}
+
+func (b *Branch) delete(entry []byte) (deleted bool) {
+	leafLen := len(b.LeafValue)
+	entryLen := len(entry)
+
+	log.Printf("b.LeafValue: %s, entry: %s\n", string(b.LeafValue), string(entry))
+
+	// does the leafValue match?
+	if leafLen > 0 {
+		log.Println("1")
+		if entryLen >= leafLen {
 			for i, lb := range b.LeafValue {
 				if entry[i] != lb {
 					return false
 				}
 			}
-		}
-	}
-
-	if entryLen > leafLen {
-		if br, present := b.Branches[entry[leafLen]]; present {
-			return br.Has(entry[leafLen+1:])
 		} else {
 			return false
 		}
 	}
 
-	return
+	// entry matches leaf. zero+ length
+
+	log.Println("2")
+
+	// if there are branches there cant be End == true with a LeafValue.
+	// if there are NO branches there MUST be End == true with either a LeafValue or not
+
+	// we are at the leafend
+	if b.End && (entryLen-leafLen) == 0 {
+		log.Println("3")
+		b.End = false
+		// FIXING
+		if len(b.Branches) == 1 {
+			log.Println("3a")
+			for k, nextBranch := range b.Branches {
+				log.Println("3b", string(b.LeafValue), string(nextBranch.LeafValue))
+				b.LeafValue = append(b.LeafValue, k)
+				b.End = nextBranch.End
+				b.Branches = nextBranch.Branches
+			}
+		}
+		// /FIXING
+		return true
+	}
+
+	log.Println("4")
+
+	// if End == true and there are no Branches we can delete the branch because either the idx or the LeafValue mark the end - if it is matched it can be deleted
+	// this is being checked in the branch above
+	if b.HasBranch(entry[leafLen]) {
+		nextBranch := b.Branches[entry[leafLen]]
+		log.Println("5")
+
+		if (len(nextBranch.LeafValue) == 0 && entryLen == leafLen+1) ||
+			nextBranch.MatchesLeaf(entry[leafLen+1:]) {
+			// next branch is the end
+			log.Println("6")
+			if len(nextBranch.Branches) == 0 {
+				log.Println("7")
+				delete(b.Branches, entry[leafLen])
+				// last branch?
+				return true
+			} else {
+				log.Println("8")
+				if len(b.Branches) == 1 {
+					// THIS NEEDS FIXING
+					// only do this if the key end matches in the next
+					if entryLen-leafLen == 0 {
+						log.Println("8a")
+						b.LeafValue = append(b.LeafValue, entry[leafLen])
+						b.End = nextBranch.End
+						b.Branches = nextBranch.Branches
+						return true
+					}
+					// \THIS NEEDS FIXING
+				}
+			}
+			log.Println("9 => DEL on next")
+			deleted := nextBranch.delete(entry[leafLen+1:])
+			// check whether it deleted and whether that was all there is. so we have to delete locally too
+			if deleted {
+				// log.Println("9a => DEL on b (self)")
+				// delete(b.Branches, entry[leafLen])
+			}
+			return deleted
+		}
+	}
+
+	return false
 }
 
 func (b *Branch) Has(prefix []byte) bool {
