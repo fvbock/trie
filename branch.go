@@ -1,111 +1,11 @@
 package trie
 
 import (
-	"bufio"
-	"bytes"
-	"encoding/gob"
 	"fmt"
-	"os"
-	// "sort"
 	"log"
 	"strings"
 	"sync"
-	"time"
 )
-
-func init() {
-	// gob.Register(&trie.EnDecodeTrie{})
-}
-
-type Trie struct {
-	Root *Branch
-}
-
-func NewTrie() *Trie {
-	t := &Trie{}
-	t.Root = NewBranch()
-	return t
-}
-
-func (t *Trie) Add(entry string) {
-	t.Root.Add([]byte(entry))
-}
-
-func (t *Trie) Delete(entry string) bool {
-	if len(entry) == 0 {
-		return false
-	}
-	return t.Root.delete([]byte(entry))
-}
-
-func (t *Trie) Dump() {
-	t.Root.Dump(0)
-}
-
-func (t *Trie) PrintDump() {
-	t.Root.PrintDump()
-}
-
-func (t *Trie) Has(prefix string) bool {
-	return t.Root.Has([]byte(prefix))
-}
-
-func (t *Trie) Members() []string {
-	return t.Root.Members([]byte{})
-}
-
-func (t *Trie) PrefixMembers(prefix string) []string {
-	return t.Root.PrefixMembers([]byte{}, []byte(prefix))
-}
-
-func (t *Trie) DumpToFile(fname string) (err error) {
-	entries := t.Members()
-	// sort.Sort(sort.Reverse(sort.StringSlice(entries)))
-	// fmt.Println(entries)
-
-	buf := new(bytes.Buffer)
-	enc := gob.NewEncoder(buf)
-	if err := enc.Encode(entries); err != nil {
-		fmt.Println(err)
-	}
-
-	f, err := os.Create(fname)
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer f.Close()
-	w := bufio.NewWriter(f)
-	bl, err := w.Write(buf.Bytes())
-	fmt.Printf("wrote %d bytes\n", bl)
-	w.Flush()
-	return
-}
-
-func LoadFromFile(fname string) (tr *Trie, err error) {
-	f, err := os.Open(fname)
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer f.Close()
-	buf := bufio.NewReader(f)
-
-	var entries []string
-	dec := gob.NewDecoder(buf)
-	if err = dec.Decode(&entries); err != nil {
-		fmt.Println("decoding error:", err)
-	}
-
-	// fmt.Println(entries)
-
-	startTime := time.Now()
-	tr = NewTrie()
-	for _, word := range entries {
-		tr.Add(word)
-	}
-	fmt.Printf("adding words to index took: %v\n", time.Since(startTime))
-
-	return
-}
 
 type Branch struct {
 	sync.RWMutex
@@ -283,6 +183,26 @@ func (b *Branch) MatchesLeaf(entry []byte) bool {
 	return true
 }
 
+func (b *Branch) PullUp() *Branch {
+	log.Println("PullUp()")
+	if len(b.Branches) == 1 {
+		log.Println("PullUp() 1")
+		for k, nextBranch := range b.Branches {
+			log.Println("PullUp() 1a", string(b.LeafValue), string(nextBranch.LeafValue))
+			if len(nextBranch.Branches) == 0 {
+				b.LeafValue = append(b.LeafValue, append([]byte{k}, nextBranch.LeafValue...)...)
+			} else {
+				b.LeafValue = append(b.LeafValue, k)
+			}
+			b.End = nextBranch.End
+			b.Branches = nextBranch.Branches
+		}
+		return b.PullUp()
+	}
+	log.Println("PullUp() 2")
+	return b
+}
+
 func (b *Branch) delete(entry []byte) (deleted bool) {
 	leafLen := len(b.LeafValue)
 	entryLen := len(entry)
@@ -315,14 +235,16 @@ func (b *Branch) delete(entry []byte) (deleted bool) {
 		log.Println("3")
 		b.End = false
 		// FIXING
-		if len(b.Branches) == 1 {
+		if len(b.Branches) == 0 {
+			log.Println("*** 3 DEL VAL")
+			b.LeafValue = nil
+		} else if len(b.Branches) == 1 {
 			log.Println("3a")
-			for k, nextBranch := range b.Branches {
-				log.Println("3b", string(b.LeafValue), string(nextBranch.LeafValue))
-				b.LeafValue = append(b.LeafValue, k)
-				b.End = nextBranch.End
-				b.Branches = nextBranch.Branches
-			}
+			fmt.Println(b.Dump(0))
+
+			b = b.PullUp()
+
+			fmt.Println(b.Dump(0))
 		}
 		// /FIXING
 		return true
@@ -332,40 +254,24 @@ func (b *Branch) delete(entry []byte) (deleted bool) {
 
 	// if End == true and there are no Branches we can delete the branch because either the idx or the LeafValue mark the end - if it is matched it can be deleted
 	// this is being checked in the branch above
+
+	// prefix is matched. check for branches
+
 	if b.HasBranch(entry[leafLen]) {
+		// next branch matches. check the leaf/branches again
 		nextBranch := b.Branches[entry[leafLen]]
 		log.Println("5")
 
-		if (len(nextBranch.LeafValue) == 0 && entryLen == leafLen+1) ||
-			nextBranch.MatchesLeaf(entry[leafLen+1:]) {
-			// next branch is the end
-			log.Println("6")
-			if len(nextBranch.Branches) == 0 {
-				log.Println("7")
-				delete(b.Branches, entry[leafLen])
-				// last branch?
-				return true
-			} else {
-				log.Println("8")
-				if len(b.Branches) == 1 {
-					// THIS NEEDS FIXING
-					// only do this if the key end matches in the next
-					if entryLen-leafLen == 0 {
-						log.Println("8a")
-						b.LeafValue = append(b.LeafValue, entry[leafLen])
-						b.End = nextBranch.End
-						b.Branches = nextBranch.Branches
-						return true
-					}
-					// \THIS NEEDS FIXING
-				}
-			}
-			log.Println("9 => DEL on next")
+		if len(nextBranch.Branches) == 0 {
+			log.Println("5a")
+			delete(b.Branches, entry[leafLen])
+			return true
+		} else {
+			log.Println("5b", string(entry[leafLen]))
 			deleted := nextBranch.delete(entry[leafLen+1:])
-			// check whether it deleted and whether that was all there is. so we have to delete locally too
-			if deleted {
-				// log.Println("9a => DEL on b (self)")
-				// delete(b.Branches, entry[leafLen])
+			log.Println("5b deleted?", deleted, string(entry[leafLen]))
+			if deleted && len(nextBranch.Branches) == 0 && !nextBranch.End {
+				delete(b.Branches, entry[leafLen])
 			}
 			return deleted
 		}
@@ -429,44 +335,10 @@ func (b *Branch) Dump(depth int) (out string) {
 	return
 }
 
+func (b *Branch) String() string {
+	return b.Dump(0)
+}
+
 func (b *Branch) PrintDump() {
 	fmt.Printf("\n\n%s\n\n", b.Dump(0))
 }
-
-// persistence
-
-// type EnDecodeTrie struct {
-// 	Root *EnDecodeBranch
-// }
-
-// type EnDecodeBranch struct {
-// 	Branches  map[byte]*Branch
-// 	LeafValue []byte // tail end
-// 	End       bool
-// }
-
-// func (t *Trie) FileDump(fname string) {
-
-// 	edTrie := &EnDecodeTrie{
-// 	Root: &EnDecodeBranch{
-// 	Branches
-// 	}
-// 	}
-
-// 	buf := new(bytes.Buffer)
-// 	enc := gob.NewEncoder(buf)
-// 	if err := enc.Encode(tr); err != nil {
-// 		log.Println(err)
-// 	}
-
-// 	f, err := os.Create(fname)
-// 	if err != nil {
-// 		log.Println(err)
-// 	}
-// 	defer f.Close()
-
-// 	w := bufio.NewWriter(f)
-// 	blength, err := w.Write(buf.Bytes())
-// 	log.Printf("wrote %d bytes\n", blength)
-// 	w.Flush()
-// }
