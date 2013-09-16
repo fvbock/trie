@@ -47,6 +47,12 @@ func TestAddTestFirst(t *testing.T) {
 	tr.Add("test")
 	tr.Add("testing")
 	tr.Add("tests")
+	// if tr.Root.LeafValue != []byte("test") {
+	// 	t.Error("Expected Root LeafValue to be equal to 'test'.")
+	// }
+	if !tr.Root.End {
+		t.Error("Expected Root End to be true")
+	}
 	if !tr.Root.End {
 		t.Error("Expected trunk End to be true")
 	}
@@ -64,7 +70,7 @@ func TestAddTestLast(t *testing.T) {
 	tr.Add("tests")
 	tr.Add("test")
 	if !tr.Root.End {
-		t.Error("Expected trunk End to be true")
+		t.Error("Expected Root End to be true")
 	}
 	if !tr.Root.Branches['i'].End {
 		t.Error("Expected 'i' End to be true")
