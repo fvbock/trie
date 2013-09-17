@@ -45,37 +45,29 @@ func (t *Trie) Delete(entry string) bool {
 }
 
 /*
- */
-func (t *Trie) Dump() string {
-	return t.Root.Dump(0)
-}
-
-/*
- */
-func (t *Trie) PrintDump() {
-	t.Root.PrintDump()
-}
-
-/*
- */
+Has returns true if the `entry` exists in the `Trie`
+*/
 func (t *Trie) Has(entry string) bool {
 	return t.Root.Has([]byte(entry))
 }
 
 /*
- */
+Has returns true if the the `Trie` contains entries with the given prefix
+*/
 func (t *Trie) HasPrefix(prefix string) bool {
 	return t.Root.HasPrefix([]byte(prefix))
 }
 
 /*
- */
+Members returns all entries of the Trie
+*/
 func (t *Trie) Members() []string {
 	return t.Root.Members([]byte{})
 }
 
 /*
- */
+PrefixMembers returns all entries of the Trie that have the given prefix
+*/
 func (t *Trie) PrefixMembers(prefix string) []string {
 	return t.Root.prefixMembers([]byte{}, []byte(prefix))
 }
@@ -85,7 +77,6 @@ func (t *Trie) PrefixMembers(prefix string) []string {
 func (t *Trie) DumpToFile(fname string) (err error) {
 	entries := t.Members()
 	// sort.Sort(sort.Reverse(sort.StringSlice(entries)))
-	// fmt.Println(entries)
 
 	buf := new(bytes.Buffer)
 	enc := gob.NewEncoder(buf)
@@ -131,6 +122,19 @@ func LoadFromFile(fname string) (tr *Trie, err error) {
 	fmt.Printf("adding words to index took: %v\n", time.Since(startTime))
 
 	return
+}
+
+/*
+Dump returns a string representation of the `Trie`
+*/
+func (t *Trie) Dump() string {
+	return t.Root.Dump(0)
+}
+
+/*
+ */
+func (t *Trie) PrintDump() {
+	t.Root.PrintDump()
 }
 
 // persistence

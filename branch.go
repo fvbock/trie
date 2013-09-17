@@ -259,7 +259,6 @@ func (b *Branch) delete(entry []byte) (deleted bool) {
 	if b.End && (entryLen-leafLen) == 0 {
 		// log.Println("3")
 		b.End = false
-		// FIXING
 		if len(b.Branches) == 0 {
 			// log.Println("*** 3 DEL VAL")
 			b.LeafValue = nil
@@ -271,7 +270,6 @@ func (b *Branch) delete(entry []byte) (deleted bool) {
 
 			fmt.Println(b.Dump(0))
 		}
-		// /FIXING
 		return true
 	}
 
