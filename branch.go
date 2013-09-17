@@ -26,7 +26,7 @@ func NewBranch() *Branch {
 }
 
 /*
-Add adds an entry to the Trie
+Add adds an entry to the Branch
 */
 func (b *Branch) Add(entry []byte) {
 	if b.LeafValue == nil && len(b.Branches) == 0 {
@@ -362,7 +362,7 @@ func (b *Branch) HasPrefix(prefix []byte) bool {
 
 	if prefixLen > leafLen {
 		if br, present := b.Branches[prefix[leafLen]]; present {
-			return br.Has(prefix[leafLen+1:])
+			return br.HasPrefix(prefix[leafLen+1:])
 		} else {
 			return false
 		}
