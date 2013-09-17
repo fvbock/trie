@@ -18,16 +18,23 @@ type Trie struct {
 	// Cardinaliy int
 }
 
+/*
+NewTrie returns the pointer to a new Trie with an initiallized root Branch
+*/
 func NewTrie() *Trie {
 	t := &Trie{}
 	t.Root = NewBranch()
 	return t
 }
 
+/*
+ */
 func (t *Trie) Add(entry string) {
 	t.Root.Add([]byte(entry))
 }
 
+/*
+ */
 func (t *Trie) Delete(entry string) bool {
 	if len(entry) == 0 {
 		return false
@@ -35,26 +42,44 @@ func (t *Trie) Delete(entry string) bool {
 	return t.Root.delete([]byte(entry))
 }
 
+/*
+ */
 func (t *Trie) Dump() string {
 	return t.Root.Dump(0)
 }
 
+/*
+ */
 func (t *Trie) PrintDump() {
 	t.Root.PrintDump()
 }
 
-func (t *Trie) Has(prefix string) bool {
-	return t.Root.Has([]byte(prefix))
+/*
+ */
+func (t *Trie) Has(entry string) bool {
+	return t.Root.Has([]byte(entry))
 }
 
+/*
+ */
+func (t *Trie) HasPrefix(prefix string) bool {
+	return t.Root.HasPrefix([]byte(prefix))
+}
+
+/*
+ */
 func (t *Trie) Members() []string {
 	return t.Root.Members([]byte{})
 }
 
+/*
+ */
 func (t *Trie) PrefixMembers(prefix string) []string {
-	return t.Root.PrefixMembers([]byte{}, []byte(prefix))
+	return t.Root.prefixMembers([]byte{}, []byte(prefix))
 }
 
+/*
+ */
 func (t *Trie) DumpToFile(fname string) (err error) {
 	entries := t.Members()
 	// sort.Sort(sort.Reverse(sort.StringSlice(entries)))
@@ -78,6 +103,8 @@ func (t *Trie) DumpToFile(fname string) (err error) {
 	return
 }
 
+/*
+ */
 func LoadFromFile(fname string) (tr *Trie, err error) {
 	f, err := os.Open(fname)
 	if err != nil {

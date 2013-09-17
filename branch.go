@@ -7,6 +7,8 @@ import (
 	"sync"
 )
 
+const PADDING_CHAR = "-"
+
 type Branch struct {
 	sync.RWMutex
 	Branches  map[byte]*Branch
@@ -14,12 +16,18 @@ type Branch struct {
 	End       bool
 }
 
+/*
+NewBranch returns a new initialezed *Branch
+*/
 func NewBranch() *Branch {
 	return &Branch{
 		Branches: make(map[byte]*Branch),
 	}
 }
 
+/*
+Add adds an entry to the Trie
+*/
 func (b *Branch) Add(entry []byte) {
 	if b.LeafValue == nil && len(b.Branches) == 0 {
 		b.Lock()
@@ -93,15 +101,19 @@ func (b *Branch) Add(entry []byte) {
 		b.Unlock()
 	} else {
 		// if there is nothing else to be pushed down we just have to mark the
-		// current branch as a end. this happens when you add a value that already
-		// us covered by the index but this particular end had not been marked.
-		// eg. you already have 'foo' in your index and now add 'f'.
+		// current branch as an end. this happens when you add a value that already
+		// is covered by the index but this particular end had not been marked.
+		// eg. you already have 'food' and 'foot' (shared LeafValue of 'foo') in
+		// your index and now add 'foo'.
 		b.Lock()
 		b.End = true
 		b.Unlock()
 	}
 }
 
+/*
+Members returns slice of all Members of the Branch prepended with `branchPrefix`
+*/
 func (b *Branch) Members(branchPrefix []byte) (members []string) {
 	if b.End {
 		members = append(members, string(append(branchPrefix, b.LeafValue...)))
@@ -113,7 +125,10 @@ func (b *Branch) Members(branchPrefix []byte) (members []string) {
 	return
 }
 
-func (b *Branch) PrefixMembers(branchPrefix []byte, searchPrefix []byte) (members []string) {
+/*
+prefixMembers returns a slice of all Members of the Branch matching the given prefix. The values returned are prepended with `branchPrefix`
+*/
+func (b *Branch) prefixMembers(branchPrefix []byte, searchPrefix []byte) (members []string) {
 	leafLen := len(b.LeafValue)
 	searchPrefixLen := len(searchPrefix)
 
@@ -131,7 +146,7 @@ func (b *Branch) PrefixMembers(branchPrefix []byte, searchPrefix []byte) (member
 			// does it match the next byte?
 			if idx == searchPrefix[leafLen] {
 				newSearchPrefix := searchPrefix[leafLen+1:]
-				members = append(members, br.PrefixMembers(append(append(branchPrefix, b.LeafValue...), idx), newSearchPrefix)...)
+				members = append(members, br.prefixMembers(append(append(branchPrefix, b.LeafValue...), idx), newSearchPrefix)...)
 			}
 		}
 	} else if searchPrefixLen == leafLen {
@@ -154,10 +169,14 @@ func (b *Branch) PrefixMembers(branchPrefix []byte, searchPrefix []byte) (member
 	return
 }
 
+/*
+ */
 func (b *Branch) HasBranches() bool {
 	return len(b.Branches) == 0
 }
 
+/*
+ */
 func (b *Branch) HasBranch(idx byte) bool {
 	if _, present := b.Branches[idx]; present {
 		return true
@@ -165,6 +184,8 @@ func (b *Branch) HasBranch(idx byte) bool {
 	return false
 }
 
+/*
+ */
 func (b *Branch) MatchesLeaf(entry []byte) bool {
 	leafLen := len(b.LeafValue)
 	entryLen := len(entry)
@@ -183,12 +204,14 @@ func (b *Branch) MatchesLeaf(entry []byte) bool {
 	return true
 }
 
-func (b *Branch) PullUp() *Branch {
-	log.Println("PullUp()")
+/*
+ */
+func (b *Branch) pullUp() *Branch {
+	log.Println("pullUp()")
 	if len(b.Branches) == 1 {
-		log.Println("PullUp() 1")
+		log.Println("pullUp() 1")
 		for k, nextBranch := range b.Branches {
-			log.Println("PullUp() 1a", string(b.LeafValue), string(nextBranch.LeafValue))
+			log.Println("pullUp() 1a", string(b.LeafValue), string(nextBranch.LeafValue))
 			if len(nextBranch.Branches) == 0 {
 				b.LeafValue = append(b.LeafValue, append([]byte{k}, nextBranch.LeafValue...)...)
 			} else {
@@ -197,12 +220,14 @@ func (b *Branch) PullUp() *Branch {
 			b.End = nextBranch.End
 			b.Branches = nextBranch.Branches
 		}
-		return b.PullUp()
+		return b.pullUp()
 	}
-	log.Println("PullUp() 2")
+	log.Println("pullUp() 2")
 	return b
 }
 
+/*
+ */
 func (b *Branch) delete(entry []byte) (deleted bool) {
 	leafLen := len(b.LeafValue)
 	entryLen := len(entry)
@@ -242,7 +267,7 @@ func (b *Branch) delete(entry []byte) (deleted bool) {
 			log.Println("3a")
 			fmt.Println(b.Dump(0))
 
-			b = b.PullUp()
+			b = b.pullUp()
 
 			fmt.Println(b.Dump(0))
 		}
@@ -257,7 +282,7 @@ func (b *Branch) delete(entry []byte) (deleted bool) {
 
 	// prefix is matched. check for branches
 
-	if b.HasBranch(entry[leafLen]) {
+	if leafLen < entryLen && b.HasBranch(entry[leafLen]) {
 		// next branch matches. check the leaf/branches again
 		nextBranch := b.Branches[entry[leafLen]]
 		log.Println("5")
@@ -271,7 +296,13 @@ func (b *Branch) delete(entry []byte) (deleted bool) {
 			deleted := nextBranch.delete(entry[leafLen+1:])
 			log.Println("5b deleted?", deleted, string(entry[leafLen]))
 			if deleted && len(nextBranch.Branches) == 0 && !nextBranch.End {
+				log.Println("5c delete", string(entry[leafLen]))
 				delete(b.Branches, entry[leafLen])
+				// dangling leaf value?
+				// if b.MatchesLeaf(entry[:leafLen]) && !b.End {
+				// 	b.LeafValue = []byte{}
+				// }
+				// return b.delete(entry[:leafLen])
 			}
 			return deleted
 		}
@@ -280,7 +311,37 @@ func (b *Branch) delete(entry []byte) (deleted bool) {
 	return false
 }
 
-func (b *Branch) Has(prefix []byte) bool {
+/*
+ */
+func (b *Branch) Has(entry []byte) bool {
+	leafLen := len(b.LeafValue)
+	entryLen := len(entry)
+
+	if entryLen >= leafLen {
+		for i, pb := range b.LeafValue {
+			if pb != entry[i] {
+				return false
+			}
+		}
+	} else {
+		return false
+	}
+
+	if entryLen > leafLen {
+		if br, present := b.Branches[entry[leafLen]]; present {
+			return br.Has(entry[leafLen+1:])
+		} else {
+			return false
+		}
+	} else if entryLen == leafLen && b.End {
+		return true
+	}
+	return false
+}
+
+/*
+ */
+func (b *Branch) HasPrefix(prefix []byte) bool {
 	leafLen := len(b.LeafValue)
 	prefixLen := len(prefix)
 
@@ -301,9 +362,6 @@ func (b *Branch) Has(prefix []byte) bool {
 	}
 
 	if prefixLen > leafLen {
-		// if len(b.Branches) == 0 {
-		// 	return false
-		// }
 		if br, present := b.Branches[prefix[leafLen]]; present {
 			return br.Has(prefix[leafLen+1:])
 		} else {
@@ -314,8 +372,8 @@ func (b *Branch) Has(prefix []byte) bool {
 	return true
 }
 
-const PADDING_CHAR = "-"
-
+/*
+ */
 func (b *Branch) Dump(depth int) (out string) {
 	if len(b.LeafValue) > 0 {
 		out += fmt.Sprintf("%s V:%v\n", strings.Repeat(PADDING_CHAR, depth), string(b.LeafValue))
