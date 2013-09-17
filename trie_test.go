@@ -310,11 +310,20 @@ func TestDeleteManyRandom_az(t *testing.T) {
 		}
 		n++
 	}
-	t.Log(words)
-	tr.PrintDump()
-	for _, w := range words {
+	// t.Log(words)
+	// tr.PrintDump()
+	for wi, w := range words {
 		if !tr.Delete(w) {
 			t.Errorf("Expected true for tr.Delete('%s')", w)
+		}
+		// expect to still find the rest
+		if wi+1 < len(words) {
+			for _, ow := range words[wi+1:] {
+				// t.Logf("Checking for %s", ow)
+				if !tr.Has(ow) {
+					t.Errorf("Expected to still find %s", ow)
+				}
+			}
 		}
 	}
 	tr.PrintDump()
