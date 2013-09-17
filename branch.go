@@ -232,11 +232,11 @@ func (b *Branch) delete(entry []byte) (deleted bool) {
 	leafLen := len(b.LeafValue)
 	entryLen := len(entry)
 
-	log.Printf("b.LeafValue: %s, entry: %s\n", string(b.LeafValue), string(entry))
+	// log.Printf("b.LeafValue: %s, entry: %s\n", string(b.LeafValue), string(entry))
 
 	// does the leafValue match?
 	if leafLen > 0 {
-		log.Println("1")
+		// log.Println("1")
 		if entryLen >= leafLen {
 			for i, lb := range b.LeafValue {
 				if entry[i] != lb {
@@ -250,18 +250,18 @@ func (b *Branch) delete(entry []byte) (deleted bool) {
 
 	// entry matches leaf. zero+ length
 
-	log.Println("2")
+	// log.Println("2")
 
 	// if there are branches there cant be End == true with a LeafValue.
 	// if there are NO branches there MUST be End == true with either a LeafValue or not
 
 	// we are at the leafend
 	if b.End && (entryLen-leafLen) == 0 {
-		log.Println("3")
+		// log.Println("3")
 		b.End = false
 		// FIXING
 		if len(b.Branches) == 0 {
-			log.Println("*** 3 DEL VAL")
+			// log.Println("*** 3 DEL VAL")
 			b.LeafValue = nil
 		} else if len(b.Branches) == 1 {
 			log.Println("3a")
@@ -275,7 +275,7 @@ func (b *Branch) delete(entry []byte) (deleted bool) {
 		return true
 	}
 
-	log.Println("4")
+	// log.Println("4")
 
 	// if End == true and there are no Branches we can delete the branch because either the idx or the LeafValue mark the end - if it is matched it can be deleted
 	// this is being checked in the branch above
@@ -285,24 +285,23 @@ func (b *Branch) delete(entry []byte) (deleted bool) {
 	if leafLen < entryLen && b.HasBranch(entry[leafLen]) {
 		// next branch matches. check the leaf/branches again
 		nextBranch := b.Branches[entry[leafLen]]
-		log.Println("5")
+		// log.Println("5. current key:", string(entry[leafLen]), "next branch:\n", nextBranch)
 
 		if len(nextBranch.Branches) == 0 {
-			log.Println("5a")
+			// log.Println("5a")
 			delete(b.Branches, entry[leafLen])
 			return true
 		} else {
-			log.Println("5b", string(entry[leafLen]))
+			// log.Println("5b", string(entry[leafLen]))
 			deleted := nextBranch.delete(entry[leafLen+1:])
-			log.Println("5b deleted?", deleted, string(entry[leafLen]))
+			// log.Println("5b", string(entry[leafLen]), "deleted?", deleted)
 			if deleted && len(nextBranch.Branches) == 0 && !nextBranch.End {
-				log.Println("5c delete", string(entry[leafLen]))
+				// log.Println("5c delete", string(entry[leafLen]))
 				delete(b.Branches, entry[leafLen])
 				// dangling leaf value?
-				// if b.MatchesLeaf(entry[:leafLen]) && !b.End {
-				// 	b.LeafValue = []byte{}
-				// }
-				// return b.delete(entry[:leafLen])
+				if len(b.Branches) == 0 {
+					b.LeafValue = nil
+				}
 			}
 			return deleted
 		}
