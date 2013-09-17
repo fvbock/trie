@@ -28,13 +28,15 @@ func NewTrie() *Trie {
 }
 
 /*
- */
+Add adds an non existing entry to the trie
+*/
 func (t *Trie) Add(entry string) {
 	t.Root.Add([]byte(entry))
 }
 
 /*
- */
+Delete removes an existing entry from the trie
+*/
 func (t *Trie) Delete(entry string) bool {
 	if len(entry) == 0 {
 		return false

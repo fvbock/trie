@@ -200,7 +200,7 @@ func TestHasManyMultibyte(t *testing.T) {
 	if tr.Has("無い") {
 		t.Error("Expected no 無い")
 	}
-	if !tr.Has("日") {
+	if tr.Has("日") {
 		t.Error("Expected no 日")
 	}
 	if !tr.Has("日本語") {
