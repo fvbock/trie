@@ -48,9 +48,6 @@ func TestAddTestFirst(t *testing.T) {
 	tr.Add("test")
 	tr.Add("testing")
 	tr.Add("tests")
-	// if tr.Root.LeafValue != []byte("test") {
-	// 	t.Error("Expected Root LeafValue to be equal to 'test'.")
-	// }
 	if !tr.Root.End {
 		t.Error("Expected Root End to be true")
 	}
@@ -393,106 +390,25 @@ func BenchmarkBenchHasPrefix(b *testing.B) {
 	}
 }
 
-// func _TestAdd(t *testing.T) {
-// 	tr := NewTrie()
-// 	t.Logf("Empty HasPrefix('foo')? %v", tr.HasPrefix("foo"))
+func BenchmarkBenchHas(b *testing.B) {
+	tr := NewTrie()
+	tr.Add("foodie")
+	tr.Add("foods")
+	tr.Add("foodchain")
+	tr.Add("foodcrave")
+	tr.Add("food")
+	tr.Add("人")
+	tr.Add("日本")
+	tr.Add("日本語学校")
+	tr.Add("学校")
+	tr.Add("日本語")
 
-// 	tr.Add("foo")
-// 	tr.Add("foodie")
-// 	tr.PrintDump()
-// 	tr.Add("foods")
-// 	tr.PrintDump()
-// 	tr.Add("foodchain")
-// 	tr.Add("foodcrave")
-// 	tr.Add("food")
-// 	// tr.Add("f")
-
-// 	tr.PrintDump()
-
-// 	t.Logf("Members(): %v", tr.Members())
-
-// 	t.Logf("PrefixMembers('foo'): %v", tr.PrefixMembers("foo"))
-// 	t.Logf("PrefixMembers('food'): %v", tr.PrefixMembers("food"))
-// 	t.Logf("PrefixMembers('foodc'): %v", tr.PrefixMembers("foodc"))
-// 	t.Logf("Has('foodc'): %v", tr.Has("foodc"))
-
-// 	t.Logf("HasPrefix('foo')? %v", tr.HasPrefix("foo"))
-// 	t.Logf("HasPrefix('food')? %v", tr.HasPrefix("food"))
-// 	t.Logf("HasPrefix('foodie')? %v", tr.HasPrefix("foodie"))
-// 	t.Logf("HasPrefix('foods')? %v", tr.HasPrefix("foods"))
-// 	t.Logf("HasPrefix('foodstore')? %v", tr.HasPrefix("foodstore"))
-// 	t.Logf("HasPrefix('a')? %v", tr.HasPrefix("a"))
-
-// 	tr2 := NewTrie()
-// 	tr2.Add("日本人")
-// 	tr2.Add("人")
-// 	tr2.Add("日本")
-// 	tr2.Add("日本語学校")
-// 	tr2.Add("学校")
-// 	tr2.Add("日本語")
-// 	tr2.Add("ä")
-
-// 	t.Logf("Members(): %v", tr2.Members())
-// 	t.Logf("PrefixMembers('日本語'): %v", tr2.PrefixMembers("日本語"))
-// 	t.Logf("PrefixMembers('日本'): %v", tr2.PrefixMembers("日本"))
-
-// 	tr2.PrintDump()
-
-// 	t.Logf("HasPrefix('日本')? %v", tr2.HasPrefix("日本"))
-// 	t.Logf("HasPrefix('日')? %v", tr2.HasPrefix("日"))
-// 	t.Logf("Has('日')? %v", tr2.Has("日"))
-// 	t.Logf("Has('日本')? %v", tr2.Has("日本"))
-// 	t.Logf("HasPrefix('日本語')? %v", tr2.HasPrefix("日本語"))
-// 	t.Logf("HasPrefix('{')? %v", tr2.HasPrefix("{"))
-// 	t.Logf("HasPrefix('æ')? %v", tr2.HasPrefix("æ"))
-// 	t.Logf("HasPrefix('ä')? %v", tr2.HasPrefix("ä"))
-
-// 	// t.Logf("order does not matter: %v\n", tr3.Root.Dump(0) == tr4.Root.Dump(0))
-// }
-
-// func _TestDelete(t *testing.T) {
-// 	tr := NewTrie()
-
-// 	tr.Add("foo")
-// 	tr.Add("foodie")
-// 	tr.Add("foods")
-// 	tr.Add("foodchain")
-// 	tr.Add("foodcrave")
-// 	tr.Add("food")
-
-// 	tr.PrintDump()
-
-// 	t.Log("----------")
-// 	var del bool
-// 	t.Log(tr.Members())
-
-// 	// del = tr.Delete("foodcrave")
-// 	// t.Logf("deleted foodcrave? %v\n", del)
-// 	// t.Log(tr.Members())
-
-// 	del = tr.Delete("food")
-// 	t.Logf("deleted food? %v\n", del)
-// 	t.Log(tr.Members())
-
-// 	del = tr.Delete("foodie")
-// 	t.Logf("deleted? %v\n", del)
-// 	t.Log(tr.Members())
-
-// 	del = tr.Delete("foods")
-// 	t.Logf("deleted? %v\n", del)
-// 	t.Log(tr.Members())
-
-// 	del = tr.Delete("foodchain")
-// 	t.Logf("deleted? %v\n", del)
-// 	t.Log(tr.Members())
-
-// 	del = tr.Delete("foo")
-// 	t.Logf("deleted? %v\n", del)
-// 	t.Log(tr.Members())
-
-// 	del = tr.Delete("foodcrave")
-// 	t.Logf("deleted foodcrave? %v\n", del)
-// 	t.Log(tr.Members())
-
-// 	tr.PrintDump()
-// }
+	for x := 0; x < b.N; x++ {
+		tr.Has("foodie")
+		tr.Has("foodcrave")
+		tr.Has("日本")
+		tr.Has("学校")
+		tr.Has("thisisnotinhere")
+		tr.Has("学日本校")
+	}
+}
