@@ -73,7 +73,12 @@ func (t *Trie) PrefixMembers(prefix string) []string {
 }
 
 /*
- */
+DumpToFile dumps all values into a slice of strings and writes that to a file
+using encoding/gob.
+
+The Trie itself can currently not be encoded directly because gob does not
+directly support structs with a sync.Mutex on them.
+*/
 func (t *Trie) DumpToFile(fname string) (err error) {
 	entries := t.Members()
 	// sort.Sort(sort.Reverse(sort.StringSlice(entries)))
@@ -97,7 +102,9 @@ func (t *Trie) DumpToFile(fname string) (err error) {
 }
 
 /*
- */
+LoadFromFile loads a gib encoded wordlist from a file and creates a new Trie
+by Add()ing all of them.
+*/
 func LoadFromFile(fname string) (tr *Trie, err error) {
 	f, err := os.Open(fname)
 	if err != nil {

@@ -1,6 +1,7 @@
 package trie
 
 import (
+	"github.com/fvbock/uds-go/set"
 	"math/rand"
 	"runtime"
 	"sync"
@@ -237,8 +238,6 @@ func TestDeleteMany(t *testing.T) {
 		t.Error("Expected true for tr.Delete('test')")
 	}
 
-	tr.PrintDump()
-
 	expectedMembers := make(map[string]bool)
 	expectedMembers["tease"] = true
 	expectedMembers["teases"] = true
@@ -255,20 +254,17 @@ func TestDeleteMany(t *testing.T) {
 	if len(expectedMembers) != 0 {
 		t.Error("Deletion seems to have deleted more than just 'test'.", expectedMembers)
 	}
-
 	if !tr.Delete("tease") {
 		t.Error("Expected true for tr.Delete('tease')")
 	}
-	tr.PrintDump()
 	if !tr.Delete("teases") {
 		t.Error("Expected true for tr.Delete('tease')")
 	}
-	tr.PrintDump()
 	if !tr.Delete("teased") {
 		t.Error("Expected true for tr.Delete('tease')")
 	}
 
-	tr.PrintDump()
+	// tr.PrintDump()
 
 	if len(tr.Root.Branches) != 0 {
 		t.Error("Expected 0 Branches on Root")
@@ -350,6 +346,58 @@ func _TestMultiAdd(t *testing.T) {
 	tr.PrintDump()
 }
 
+func TestDumpToFileLoadFromFile(t *testing.T) {
+	tr := NewTrie()
+	var prefix = "prefix"
+	var words []string
+	var str []byte
+	var n = 0
+	for n < 100 {
+		i := 0
+		str = []byte{}
+		for i < 10 {
+			rn := 0
+			for rn < 97 {
+				rn = rand.Intn(123)
+			}
+			str = append(str, byte(rn))
+			i++
+		}
+		if rand.Intn(2) == 1 {
+			words = append(words, prefix+string(str))
+			tr.Add(prefix + string(str))
+		} else {
+			words = append(words, string(str))
+			tr.Add(string(str))
+		}
+		n++
+	}
+	tr.DumpToFile("TestDumpToFileLoadFromFile")
+
+	loadedTrie, err := LoadFromFile("TestDumpToFileLoadFromFile")
+	if err != nil {
+		t.Errorf("Failed to load Trie from file: %v", err)
+	}
+	for _, w := range words {
+		// t.Logf("Checking for %s", w)
+		if !loadedTrie.Has(w) {
+			t.Errorf("Expected to find %s", w)
+		}
+	}
+
+	trMembers := set.NewStringSet(tr.Members()...)
+	loadedTrieMembers := set.NewStringSet(loadedTrie.Members()...)
+
+	t.Log("trMembers.IsEqual(loadedTrieMembers):", trMembers.IsEqual(loadedTrieMembers))
+
+	diff := trMembers.Difference(loadedTrieMembers)
+	if diff.Len() > 0 {
+		t.Error("Dump() of the original and the LoadFromFile() version of the Trie are different.")
+	}
+}
+
+// some simple benchmarks
+
 func BenchmarkBenchAdd(b *testing.B) {
 	for x := 0; x < b.N; x++ {
 		tr := NewTrie()
@@ -363,7 +411,6 @@ func BenchmarkBenchAdd(b *testing.B) {
 		tr.Add("日本語学校")
 		tr.Add("学校")
 		tr.Add("日本語")
-
 	}
 }
 
