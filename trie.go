@@ -93,11 +93,12 @@ func (t *Trie) DumpToFile(fname string) (err error) {
 	}
 
 	f, err := os.Create(fname)
-	defer f.Close()
 	if err != nil {
 		err = errors.New(fmt.Sprintf("Could not save dump file: %v", err))
 		return
 	}
+	defer f.Close()
+
 	w := bufio.NewWriter(f)
 	bl, err := w.Write(buf.Bytes())
 	if err != nil {
@@ -114,12 +115,13 @@ LoadFromFile loads a gib encoded wordlist from a file and creates a new Trie
 by Add()ing all of them.
 */
 func LoadFromFile(fname string) (tr *Trie, err error) {
+	fmt.Println("Load trie from", fname)
 	f, err := os.Open(fname)
-	defer f.Close()
 	if err != nil {
 		err = errors.New(fmt.Sprintf("Could not open Trie file: %v", err))
 		return
 	}
+	defer f.Close()
 
 	buf := bufio.NewReader(f)
 	var entries []string
