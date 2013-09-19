@@ -372,9 +372,9 @@ func TestDumpToFileLoadFromFile(t *testing.T) {
 		}
 		n++
 	}
-	tr.DumpToFile("TestDumpToFileLoadFromFile")
+	tr.DumpToFile("testfiles/TestDumpToFileLoadFromFile")
 
-	loadedTrie, err := LoadFromFile("TestDumpToFileLoadFromFile")
+	loadedTrie, err := LoadFromFile("testfiles/TestDumpToFileLoadFromFile")
 	if err != nil {
 		t.Errorf("Failed to load Trie from file: %v", err)
 	}
@@ -393,6 +393,20 @@ func TestDumpToFileLoadFromFile(t *testing.T) {
 	diff := trMembers.Difference(loadedTrieMembers)
 	if diff.Len() > 0 {
 		t.Error("Dump() of the original and the LoadFromFile() version of the Trie are different.")
+	}
+}
+
+func TestLoadFromFileEmpty(t *testing.T) {
+	loadedTrie, err := LoadFromFile("testfiles/empty")
+	if err != nil {
+		t.Errorf("Failed to load Trie from file: %v", err)
+	}
+
+	loadedTrieMembers := set.NewStringSet(loadedTrie.Members()...)
+	t.Log(loadedTrieMembers)
+	t.Log(loadedTrieMembers.Len())
+	if loadedTrieMembers.Len() > 0 {
+		t.Error("Expected 0 Members from LoadFromFile() with an empty file.")
 	}
 }
 

@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/gob"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"time"
 )
@@ -85,17 +87,23 @@ func (t *Trie) DumpToFile(fname string) (err error) {
 
 	buf := new(bytes.Buffer)
 	enc := gob.NewEncoder(buf)
-	if err := enc.Encode(entries); err != nil {
-		fmt.Println(err)
+	if err = enc.Encode(entries); err != nil {
+		err = errors.New(fmt.Sprintf("Could encode Trie entries for dump file: %v", err))
+		return
 	}
 
 	f, err := os.Create(fname)
-	if err != nil {
-		fmt.Println(err)
-	}
 	defer f.Close()
+	if err != nil {
+		err = errors.New(fmt.Sprintf("Could not save dump file: %v", err))
+		return
+	}
 	w := bufio.NewWriter(f)
 	bl, err := w.Write(buf.Bytes())
+	if err != nil {
+		err = errors.New(fmt.Sprintf("Error writing to dump file: %v", err))
+		return
+	}
 	fmt.Printf("wrote %d bytes\n", bl)
 	w.Flush()
 	return
@@ -107,22 +115,27 @@ by Add()ing all of them.
 */
 func LoadFromFile(fname string) (tr *Trie, err error) {
 	f, err := os.Open(fname)
-	if err != nil {
-		fmt.Println(err)
-	}
 	defer f.Close()
-	buf := bufio.NewReader(f)
+	if err != nil {
+		err = errors.New(fmt.Sprintf("Could not open Trie file: %v", err))
+		return
+	}
 
+	buf := bufio.NewReader(f)
 	var entries []string
 	dec := gob.NewDecoder(buf)
 	if err = dec.Decode(&entries); err != nil {
-		fmt.Println("decoding error:", err)
+		if err == io.EOF && entries == nil {
+			fmt.Println("Nothing to decode. Seems the file is empty.")
+			err = nil
+		} else {
+			err = errors.New(fmt.Sprintf("Decoding error: %v", err))
+			return
+		}
 	}
 
-	// fmt.Println(entries)
-
-	startTime := time.Now()
 	tr = NewTrie()
+	startTime := time.Now()
 	for _, word := range entries {
 		tr.Add(word)
 	}
