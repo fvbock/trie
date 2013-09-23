@@ -119,29 +119,29 @@ func LoadFromFile(fname string) (tr *Trie, err error) {
 	f, err := os.Open(fname)
 	if err != nil {
 		err = errors.New(fmt.Sprintf("Could not open Trie file: %v", err))
-		return
-	}
-	defer f.Close()
+	} else {
+		defer f.Close()
 
-	buf := bufio.NewReader(f)
-	var entries []string
-	dec := gob.NewDecoder(buf)
-	if err = dec.Decode(&entries); err != nil {
-		if err == io.EOF && entries == nil {
-			fmt.Println("Nothing to decode. Seems the file is empty.")
-			err = nil
-		} else {
-			err = errors.New(fmt.Sprintf("Decoding error: %v", err))
-			return
+		buf := bufio.NewReader(f)
+		var entries []string
+		dec := gob.NewDecoder(buf)
+		if err = dec.Decode(&entries); err != nil {
+			if err == io.EOF && entries == nil {
+				fmt.Println("Nothing to decode. Seems the file is empty.")
+				err = nil
+			} else {
+				err = errors.New(fmt.Sprintf("Decoding error: %v", err))
+				return
+			}
 		}
-	}
 
-	tr = NewTrie()
-	startTime := time.Now()
-	for _, word := range entries {
-		tr.Add(word)
+		tr = NewTrie()
+		startTime := time.Now()
+		for _, word := range entries {
+			tr.Add(word)
+		}
+		fmt.Printf("adding words to index took: %v\n", time.Since(startTime))
 	}
-	fmt.Printf("adding words to index took: %v\n", time.Since(startTime))
 
 	return
 }
