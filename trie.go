@@ -119,6 +119,7 @@ func LoadFromFile(fname string) (tr *Trie, err error) {
 	f, err := os.Open(fname)
 	if err != nil {
 		err = errors.New(fmt.Sprintf("Could not open Trie file: %v", err))
+		tr = NewTrie()
 	} else {
 		defer f.Close()
 
