@@ -2,7 +2,7 @@ package trie
 
 import (
 	"fmt"
-	"log"
+	// "log"
 	"strings"
 	"sync"
 )
@@ -259,12 +259,10 @@ func (b *Branch) delete(entry []byte) (deleted bool) {
 			// log.Println("*** 3 DEL VAL")
 			b.LeafValue = nil
 		} else if len(b.Branches) == 1 {
-			log.Println("3a")
-			fmt.Println(b.Dump(0))
-
+			// log.Println("3a")
+			// fmt.Println(b.Dump(0))
 			b = b.pullUp()
-
-			fmt.Println(b.Dump(0))
+			// fmt.Println(b.Dump(0))
 		}
 		return true
 	}
