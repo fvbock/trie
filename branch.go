@@ -207,11 +207,8 @@ func (b *Branch) MatchesLeaf(entry []byte) bool {
 /*
  */
 func (b *Branch) pullUp() *Branch {
-	log.Println("pullUp()")
 	if len(b.Branches) == 1 {
-		log.Println("pullUp() 1")
 		for k, nextBranch := range b.Branches {
-			log.Println("pullUp() 1a", string(b.LeafValue), string(nextBranch.LeafValue))
 			if len(nextBranch.Branches) == 0 {
 				b.LeafValue = append(b.LeafValue, append([]byte{k}, nextBranch.LeafValue...)...)
 			} else {
@@ -222,7 +219,6 @@ func (b *Branch) pullUp() *Branch {
 		}
 		return b.pullUp()
 	}
-	log.Println("pullUp() 2")
 	return b
 }
 
