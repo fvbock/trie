@@ -25,7 +25,9 @@ NewTrie returns the pointer to a new Trie with an initiallized root Branch
 */
 func NewTrie() *Trie {
 	t := &Trie{}
-	t.Root = NewBranch()
+	t.Root = &Branch{
+		Branches: make(map[byte]*Branch),
+	}
 	return t
 }
 

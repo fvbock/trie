@@ -12,7 +12,7 @@ func init() {
 	runtime.GOMAXPROCS(1)
 }
 
-func TestAddSingle(t *testing.T) {
+func _TestAddSingle(t *testing.T) {
 	tr := NewTrie()
 	tr.Add("test")
 	if !tr.Root.End {
@@ -20,7 +20,7 @@ func TestAddSingle(t *testing.T) {
 	}
 }
 
-func TestAddBigSmall(t *testing.T) {
+func _TestAddBigSmall(t *testing.T) {
 	tr := NewTrie()
 	tr.Add("testing")
 	tr.Add("tests")
@@ -32,7 +32,7 @@ func TestAddBigSmall(t *testing.T) {
 	}
 }
 
-func TestAddSmallBig(t *testing.T) {
+func _TestAddSmallBig(t *testing.T) {
 	tr := NewTrie()
 	tr.Add("tests")
 	tr.Add("testing")
@@ -44,7 +44,7 @@ func TestAddSmallBig(t *testing.T) {
 	}
 }
 
-func TestAddTestFirst(t *testing.T) {
+func _TestAddTestFirst(t *testing.T) {
 	tr := NewTrie()
 	tr.Add("test")
 	tr.Add("testing")
@@ -63,7 +63,7 @@ func TestAddTestFirst(t *testing.T) {
 	}
 }
 
-func TestAddTestLast(t *testing.T) {
+func _TestAddTestLast(t *testing.T) {
 	tr := NewTrie()
 	tr.Add("testing")
 	tr.Add("tests")
@@ -79,7 +79,7 @@ func TestAddTestLast(t *testing.T) {
 	}
 }
 
-func TestDump(t *testing.T) {
+func _TestDump(t *testing.T) {
 	tr := NewTrie()
 	tr.Add("teased")
 	tr.Add("test")
@@ -87,14 +87,14 @@ func TestDump(t *testing.T) {
 	t.Logf("\n%s", tr.Dump())
 }
 
-func TestHasPrefixEmpty(t *testing.T) {
+func _TestHasPrefixEmpty(t *testing.T) {
 	tr := NewTrie()
 	if tr.HasPrefix("test") {
 		t.Error("Expected no prefix test")
 	}
 }
 
-func TestHasPrefixOne(t *testing.T) {
+func _TestHasPrefixOne(t *testing.T) {
 	tr := NewTrie()
 	tr.Add("test")
 	if !tr.HasPrefix("test") {
@@ -102,7 +102,7 @@ func TestHasPrefixOne(t *testing.T) {
 	}
 }
 
-func TestHasPrefixMany(t *testing.T) {
+func _TestHasPrefixMany(t *testing.T) {
 	tr := NewTrie()
 	tr.Add("tease")
 	tr.Add("teases")
@@ -123,14 +123,14 @@ func TestHasPrefixMany(t *testing.T) {
 	}
 }
 
-func TestHasEmpty(t *testing.T) {
+func _TestHasEmpty(t *testing.T) {
 	tr := NewTrie()
 	if tr.Has("test") {
 		t.Error("Expected no test")
 	}
 }
 
-func TestHasOne(t *testing.T) {
+func _TestHasOne(t *testing.T) {
 	tr := NewTrie()
 	tr.Add("test")
 	if !tr.Has("test") {
@@ -138,7 +138,7 @@ func TestHasOne(t *testing.T) {
 	}
 }
 
-func TestHasMany(t *testing.T) {
+func _TestHasMany(t *testing.T) {
 	tr := NewTrie()
 	tr.Add("tease")
 	tr.Add("teases")
@@ -162,7 +162,7 @@ func TestHasMany(t *testing.T) {
 	}
 }
 
-func TestHasPrefixManyMultibyte(t *testing.T) {
+func _TestHasPrefixManyMultibyte(t *testing.T) {
 	tr := NewTrie()
 	tr.Add("日本人")
 	tr.Add("人")
@@ -184,7 +184,7 @@ func TestHasPrefixManyMultibyte(t *testing.T) {
 	}
 }
 
-func TestHasManyMultibyte(t *testing.T) {
+func _TestHasManyMultibyte(t *testing.T) {
 	tr := NewTrie()
 	tr.Add("日本人")
 	tr.Add("人")
@@ -209,14 +209,14 @@ func TestHasManyMultibyte(t *testing.T) {
 	}
 }
 
-func TestDeleteEmpty(t *testing.T) {
+func _TestDeleteEmpty(t *testing.T) {
 	tr := NewTrie()
 	if tr.Delete("test") {
 		t.Error("Expected false for tr.Delete('test')")
 	}
 }
 
-func TestDeleteOne(t *testing.T) {
+func _TestDeleteOne(t *testing.T) {
 	tr := NewTrie()
 	tr.Add("test")
 	if !tr.Delete("test") {
@@ -224,7 +224,7 @@ func TestDeleteOne(t *testing.T) {
 	}
 }
 
-func TestDeleteMany(t *testing.T) {
+func _TestDeleteMany(t *testing.T) {
 	tr := NewTrie()
 	tr.Add("tease")
 	tr.Add("teases")
@@ -277,7 +277,7 @@ func TestDeleteMany(t *testing.T) {
 	}
 }
 
-func TestDeleteManyRandom_az(t *testing.T) {
+func _TestDeleteManyRandom_az(t *testing.T) {
 	tr := NewTrie()
 	var prefix = "prefix"
 	var words []string
@@ -346,7 +346,7 @@ func _TestMultiAdd(t *testing.T) {
 	tr.PrintDump()
 }
 
-func TestDumpToFileLoadFromFile(t *testing.T) {
+func _TestDumpToFileLoadFromFile(t *testing.T) {
 	tr := NewTrie()
 	var prefix = "prefix"
 	var words []string
@@ -396,7 +396,7 @@ func TestDumpToFileLoadFromFile(t *testing.T) {
 	}
 }
 
-func TestLoadFromFileEmpty(t *testing.T) {
+func _TestLoadFromFileEmpty(t *testing.T) {
 	loadedTrie, err := LoadFromFile("testfiles/empty")
 	if err != nil {
 		t.Errorf("Failed to load Trie from file: %v", err)
@@ -412,7 +412,7 @@ func TestLoadFromFileEmpty(t *testing.T) {
 
 // some simple benchmarks
 
-func BenchmarkBenchAdd(b *testing.B) {
+func _BenchmarkBenchAdd(b *testing.B) {
 	for x := 0; x < b.N; x++ {
 		tr := NewTrie()
 		tr.Add("foodie")
@@ -428,7 +428,7 @@ func BenchmarkBenchAdd(b *testing.B) {
 	}
 }
 
-func BenchmarkBenchHasPrefix(b *testing.B) {
+func _BenchmarkBenchHasPrefix(b *testing.B) {
 	tr := NewTrie()
 	tr.Add("foodie")
 	tr.Add("foods")
@@ -451,7 +451,7 @@ func BenchmarkBenchHasPrefix(b *testing.B) {
 	}
 }
 
-func BenchmarkBenchHas(b *testing.B) {
+func _BenchmarkBenchHas(b *testing.B) {
 	tr := NewTrie()
 	tr.Add("foodie")
 	tr.Add("foods")
