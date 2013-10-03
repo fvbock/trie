@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	// "log"
+	"log"
 	"os"
 	"time"
 )
@@ -15,9 +15,11 @@ import (
 // TRIE
 
 type RefCountTrie struct {
-	Root         *RefCountBranch
-	OpsCount     int
-	DumpOpsCount int
+	Root                     *RefCountBranch
+	OpsCount                 int
+	DumpOpsCount             int
+	PersistThresholdOpsCount int
+	// PersistThresholdTime time.Duration
 }
 
 /*
@@ -25,8 +27,9 @@ NewTrie returns the pointer to a new Trie with an initiallized root Branch
 */
 func NewRefCountTrie() *RefCountTrie {
 	t := &RefCountTrie{
-		OpsCount:     0,
-		DumpOpsCount: 0,
+		OpsCount:                 0,
+		DumpOpsCount:             0,
+		PersistThresholdOpsCount: 0,
 	}
 	t.Root = &RefCountBranch{
 		Branches: make(map[byte]*RefCountBranch),
@@ -35,17 +38,23 @@ func NewRefCountTrie() *RefCountTrie {
 }
 
 /*
-Add adds an non existing entry to the trie
+Add adds an entry to the trie and returns the branch node that the insertion
+was made at - or rather where the end of the entry was marked.
 */
-func (t *RefCountTrie) Add(entry string) {
+func (t *RefCountTrie) Add(entry string) *RefCountBranch {
 	t.Root.Lock()
-	t.Root.add([]byte(entry))
+	b := t.Root.add([]byte(entry))
 	t.OpsCount += 1
 	t.Root.Unlock()
+	return b
 }
 
 /*
-Delete removes an existing entry from the trie
+Delete decrements the count of an existing entry by one. If the count equals
+zero it removes an the entry from the trie. Returns true if the entry existed,
+false otherwise. Note that the return value says something about the previous
+existence of the entry - not whether it has been completely removed or just
+its count decremented.
 */
 func (t *RefCountTrie) Delete(entry string) bool {
 	if len(entry) == 0 {
@@ -124,8 +133,8 @@ func (t *RefCountTrie) PrefixMembersList(prefix string) (members []string) {
 	return
 }
 
-func (t *RefCountTrie) DumpToFileWithMinOps(fname string, opsCount int) (err error) {
-	if t.OpsCount >= opsCount {
+func (t *RefCountTrie) DumpToFileWithMinOps(fname string) (err error) {
+	if t.OpsCount >= t.PersistThresholdOpsCount {
 		err = t.DumpToFile(fname)
 	} else {
 		// log.Println(t.OpsCount)
@@ -145,7 +154,6 @@ func (t *RefCountTrie) DumpToFile(fname string) (err error) {
 	t.DumpOpsCount = t.OpsCount
 	entries := t.Members()
 	t.Root.Unlock()
-	// sort.Sort(sort.Reverse(sort.StringSlice(entries)))
 
 	buf := new(bytes.Buffer)
 	enc := gob.NewEncoder(buf)
@@ -167,7 +175,7 @@ func (t *RefCountTrie) DumpToFile(fname string) (err error) {
 		err = errors.New(fmt.Sprintf("Error writing to dump file: %v", err))
 		return
 	}
-	fmt.Printf("wrote %d bytes\n", bl)
+	log.Printf("wrote %d bytes\n", bl)
 	w.Flush()
 	t.Root.Lock()
 	t.OpsCount -= t.DumpOpsCount
@@ -181,7 +189,7 @@ LoadFromFile loads a gib encoded wordlist from a file and creates a new Trie
 by Add()ing all of them.
 */
 func RCTLoadFromFile(fname string) (tr *RefCountTrie, err error) {
-	fmt.Println("Load trie from", fname)
+	log.Println("Load trie from", fname)
 	f, err := os.Open(fname)
 	if err != nil {
 		err = errors.New(fmt.Sprintf("Could not open Trie file: %v", err))
@@ -194,7 +202,7 @@ func RCTLoadFromFile(fname string) (tr *RefCountTrie, err error) {
 		dec := gob.NewDecoder(buf)
 		if err = dec.Decode(&entries); err != nil {
 			if err == io.EOF && entries == nil {
-				fmt.Println("Nothing to decode. Seems the file is empty.")
+				log.Println("Nothing to decode. Seems the file is empty.")
 				err = nil
 			} else {
 				err = errors.New(fmt.Sprintf("Decoding error: %v", err))
@@ -204,17 +212,13 @@ func RCTLoadFromFile(fname string) (tr *RefCountTrie, err error) {
 
 		tr = NewRefCountTrie()
 		startTime := time.Now()
-		var i int
 		for _, mi := range entries {
-			i = 0
-			for i < mi.Count {
-				tr.Add(mi.Value)
-				i++
-			}
+			b := tr.Add(mi.Value)
+			b.Count = mi.Count
 		}
 		tr.DumpOpsCount = 0
 		tr.OpsCount = 0
-		fmt.Printf("adding words to index took: %v\n", time.Since(startTime))
+		log.Printf("adding words to index took: %v\n", time.Since(startTime))
 	}
 
 	return

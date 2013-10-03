@@ -48,9 +48,7 @@ func TestRefCountTrieAddBigSmallMulti(t *testing.T) {
 	tr := NewRefCountTrie()
 	tr.Add("testing")
 	tr.Add("testing")
-	t.Logf("\n%s", tr.Dump())
 	tr.Add("tests")
-	t.Logf("\n%s", tr.Dump())
 	if !tr.Root.Branches['i'].End {
 		t.Error("Expected 'i' End to be true")
 	}
@@ -126,12 +124,10 @@ func TestRefCountTrieAddTestLast(t *testing.T) {
 func TestRefCountTrieDump(t *testing.T) {
 	tr := NewRefCountTrie()
 	tr.Add("teased")
-	t.Logf("\n%s", tr.Dump())
 	tr.Add("test")
-	t.Logf("\n%s", tr.Dump())
 	tr.Add("test")
-	t.Logf("\n%s", tr.Dump())
 	tr.Add("testing")
+	tr.Add("tea")
 	t.Logf("\n%s", tr.Dump())
 }
 
@@ -141,7 +137,7 @@ func TestRefCountTrieMembersCount(t *testing.T) {
 	tr.Add("test")
 	tr.Add("test")
 	tr.Add("testing")
-	t.Logf("\n%s", tr.Dump())
+
 	if len(tr.Members()) != 3 {
 		t.Error("Expected 3 members")
 	}
@@ -163,28 +159,28 @@ func TestRefCountTrieMembersCount(t *testing.T) {
 	t.Logf("\n%v", tr.Members())
 }
 
-func TestRefCountTriePrefixMembersCount(t *testing.T) {
-	tr := NewRefCountTrie()
-	tr.Add("teased")
-	tr.Add("test")
-	tr.Add("test")
-	tr.Add("testing")
-	tr.Add("foo")
-	t.Logf("\n%v", tr.PrefixMembers("test"))
-	t.Logf("\n%v", tr.PrefixMembers("tea"))
+// TODO
+// func TestRefCountTriePrefixMembersCount(t *testing.T) {
+// 	tr := NewRefCountTrie()
+// 	tr.Add("teased")
+// 	tr.Add("test")
+// 	tr.Add("test")
+// 	tr.Add("testing")
+// 	tr.Add("foo")
+// 	t.Logf("\n%v", tr.PrefixMembers("test"))
 
-}
+// 	for _, mi := range tr.PrefixMembers("test") {
+// 	t.Logf("\n%v", tr.PrefixMembers("tea"))
+
+// }
 
 func TestRefCountTriePrefixMembersCountFromFile(t *testing.T) {
 	tr := NewRefCountTrie()
 	tr, err := RCTLoadFromFile("testfiles/trie_idx_5018d345558fbe46c4000001")
+	// tr, err := RCTLoadFromFile("/tmp/trie_idx_5018d345558fbe46c4000001")
 	if err != nil {
 		t.Errorf("Failed to load Trie from file: %v", err)
 	}
-	// tr.Add("teased")
-	// tr.Add("test")
-	// tr.Add("test")
-	// tr.Add("testing")
 	t.Logf("\n%v", len(tr.Members()))
 	t.Logf("\n%v", tr.PrefixMembers("test"))
 	t.Logf("\n%v", tr.PrefixMembersList("test"))

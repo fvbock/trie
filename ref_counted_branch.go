@@ -40,14 +40,13 @@ func (b *RefCountBranch) NewBranch() *RefCountBranch {
 /*
 Add adds an entry to the Branch
 */
-func (b *RefCountBranch) add(entry []byte) {
+func (b *RefCountBranch) add(entry []byte) (addedBranch *RefCountBranch) {
 	// log.Println("O ADD ", string(entry))
 	if b.LeafValue == nil && len(b.Branches) == 0 {
 		// log.Println("ADD 1")
-		// b.Lock()
 		b.LeafValue = entry
 		b.setEnd(true)
-		// b.Unlock()
+		addedBranch = b
 		return
 	}
 
@@ -56,9 +55,8 @@ func (b *RefCountBranch) add(entry []byte) {
 	// to push. just mark the current idx position as End
 	if len(b.LeafValue) == 0 && len(entry) == 0 {
 		// log.Println("ADD 2")
-		// b.Lock()
 		b.setEnd(true)
-		// b.Unlock()
+		addedBranch = b
 		return
 	}
 
@@ -81,7 +79,6 @@ func (b *RefCountBranch) add(entry []byte) {
 
 	// the new leaf is smaller than the current leaf.
 	// we will push the old leaf down the branch
-	// b.Lock()
 	if newLeafLen < len(b.LeafValue) {
 		// log.Println("ADD 3")
 		tail := b.LeafValue[newLeafLen:]
@@ -112,38 +109,29 @@ func (b *RefCountBranch) add(entry []byte) {
 		}
 		b.Branches[idx] = newBranch
 	}
-	// b.Unlock()
 
 	// new leaf is smaller than the entry, which means there will be more stuff
 	// that we need to push down
 	if newLeafLen < len(entry) {
-		// log.Println("ADD 4")
 		tail := entry[newLeafLen:]
 		idx := tail[0]
-		// fmt.Printf("\nnewLeafLen < len(entry) |%s| |%s|\n", string(newLeaf), string(entry))
-		// fmt.Println(">>>", string(b.LeafValue), b.End, "at idx", idx)
 
 		// create new branch at idx if it does not exists yet
-		// b.Lock()
 		if _, notPresent := b.Branches[idx]; !notPresent {
 			b.Branches[idx] = b.NewBranch()
-			// fmt.Printf("NewBranch at idx: %v for newleaf %s, entry %s \n", string(idx), string(newLeaf), string(entry))
 		}
 		// check whether the idx itself marks an End $. if so add a new idx
-		// fmt.Println(">+>> send down", string(tail[1:]), "at idx", string(idx), "which currently has", len(b.Branches[idx].Branches), "branches and LeafVal:", b.Branches[idx].LeafValue)
-		b.Branches[idx].add(tail[1:])
-		// b.Unlock()
+		addedBranch = b.Branches[idx].add(tail[1:])
 	} else {
 		// if there is nothing else to be pushed down we just have to mark the
 		// current branch as an end. this happens when you add a value that already
 		// is covered by the index but this particular end had not been marked.
 		// eg. you already have 'food' and 'foot' (shared LeafValue of 'foo') in
 		// your index and now add 'foo'.
-		// log.Println("ADD 4a")
-		// b.Lock()
 		b.setEnd(true)
-		// b.Unlock()
+		addedBranch = b
 	}
+	return addedBranch
 }
 
 /*
