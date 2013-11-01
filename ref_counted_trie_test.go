@@ -159,19 +159,16 @@ func TestRefCountTrieMembersCount(t *testing.T) {
 	t.Logf("\n%v", tr.Members())
 }
 
-// TODO
+// // todo
 // func TestRefCountTriePrefixMembersCount(t *testing.T) {
 // 	tr := NewRefCountTrie()
-// 	tr.Add("teased")
-// 	tr.Add("test")
-// 	tr.Add("test")
-// 	tr.Add("testing")
 // 	tr.Add("foo")
-// 	t.Logf("\n%v", tr.PrefixMembers("test"))
+// 	tr.Add("foobar")
+// 	tr.Add("bar")
 
-// 	for _, mi := range tr.PrefixMembers("test") {
-// 	t.Logf("\n%v", tr.PrefixMembers("tea"))
-
+// 	if tr.MembersCount("test") != 0 {
+// 		t.Error("Expected HasCount for test to be 0")
+// 	}
 // }
 
 func TestRefCountTriePrefixMembersCountFromFile(t *testing.T) {
@@ -339,6 +336,41 @@ func TestRefCountTrieDeleteDouble(t *testing.T) {
 	}
 	tr.PrintDump()
 	t.Log(tr.Members())
+}
+
+func TestRefCountTrieDeletePrefixCount(t *testing.T) {
+	tr := NewRefCountTrie()
+	tr.Add("foo")
+	tr.Add("foo")
+	tr.Add("foobar")
+	tr.PrintDump()
+	if tr.Delete("test") {
+		t.Error("Expected false for tr.Delete('test')")
+	}
+	if !tr.Delete("foo") {
+		t.Error("Expected true for tr.Delete('foo')")
+	}
+	tr.PrintDump()
+	_, cfoo := tr.HasCount("foo")
+	if cfoo != 1 {
+		t.Errorf("Expected count for foo to be 1. got %v instead.", cfoo)
+	}
+	_, cfoobar := tr.HasCount("foobar")
+	if cfoobar != 1 {
+		t.Errorf("Expected count for foobar to be 1. got %v instead.", cfoobar)
+	}
+	if !tr.Delete("foo") {
+		t.Error("Expected true for tr.Delete('foo')")
+	}
+	tr.PrintDump()
+	_, cfoo = tr.HasCount("foo")
+	if cfoo != 0 {
+		t.Errorf("Expected count for foo to be 0. got %v instead.", cfoo)
+	}
+	_, cfoobar = tr.HasCount("foobar")
+	if cfoobar != 1 {
+		t.Errorf("Expected count for foobar to be 1. got %v instead.", cfoobar)
+	}
 }
 
 func TestRefCountTrieDeleteMany(t *testing.T) {
