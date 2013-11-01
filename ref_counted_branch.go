@@ -287,23 +287,23 @@ func (b *RefCountBranch) hasCount(entry []byte) (exists bool, count int) {
 	if entryLen >= leafLen {
 		for i, pb := range b.LeafValue {
 			if pb != entry[i] {
-				return false, b.Count
+				return false, 0
 			}
 		}
 	} else {
-		return false, b.Count
+		return false, 0
 	}
 
 	if entryLen > leafLen {
 		if br, present := b.Branches[entry[leafLen]]; present {
 			return br.hasCount(entry[leafLen+1:])
 		} else {
-			return false, b.Count
+			return false, 0
 		}
 	} else if entryLen == leafLen && b.End {
 		return true, b.Count
 	}
-	return false, b.Count
+	return false, 0
 }
 
 /*
