@@ -78,7 +78,7 @@ func (t *RefCountTrie) Has(entry string) bool {
 HasCount returns true  if the `entry` exists in the `Trie`. The second returned
 value is the count how often the entry has been set.
 */
-func (t *RefCountTrie) HasCount(entry string) (exists bool, count int) {
+func (t *RefCountTrie) HasCount(entry string) (exists bool, count int64) {
 	return t.Root.hasCount([]byte(entry))
 }
 
@@ -93,7 +93,7 @@ func (t *RefCountTrie) HasPrefix(prefix string) bool {
 HasPrefixCount returns true if the the `Trie` contains entries with the given
 prefix. The second returned value is the count how often the entry has been set.
 */
-func (t *RefCountTrie) HasPrefixCount(prefix string) (exists bool, count int) {
+func (t *RefCountTrie) HasPrefixCount(prefix string) (exists bool, count int64) {
 	return t.Root.hasPrefixCount([]byte(prefix))
 }
 

@@ -12,7 +12,7 @@ import (
 
 type MemberInfo struct {
 	Value string
-	Count int
+	Count int64
 }
 
 func (m *MemberInfo) String() string {
@@ -24,7 +24,7 @@ type RefCountBranch struct {
 	Branches  map[byte]*RefCountBranch
 	LeafValue []byte // tail end
 	End       bool
-	Count     int
+	Count     int64
 }
 
 /*
@@ -280,7 +280,7 @@ func (b *RefCountBranch) has(entry []byte) bool {
 	return exists
 }
 
-func (b *RefCountBranch) hasCount(entry []byte) (exists bool, count int) {
+func (b *RefCountBranch) hasCount(entry []byte) (exists bool, count int64) {
 	leafLen := len(b.LeafValue)
 	entryLen := len(entry)
 
@@ -313,7 +313,7 @@ func (b *RefCountBranch) hasPrefix(prefix []byte) bool {
 	return exists
 }
 
-func (b *RefCountBranch) hasPrefixCount(prefix []byte) (exists bool, count int) {
+func (b *RefCountBranch) hasPrefixCount(prefix []byte) (exists bool, count int64) {
 	leafLen := len(b.LeafValue)
 	prefixLen := len(prefix)
 
