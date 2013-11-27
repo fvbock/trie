@@ -102,12 +102,13 @@ func (t *Trie) DumpToFile(fname string) (err error) {
 	defer f.Close()
 
 	w := bufio.NewWriter(f)
-	bl, err := w.Write(buf.Bytes())
+	// bl, err := w.Write(buf.Bytes())
+	_, err = w.Write(buf.Bytes())
 	if err != nil {
 		err = errors.New(fmt.Sprintf("Error writing to dump file: %v", err))
 		return
 	}
-	fmt.Printf("wrote %d bytes\n", bl)
+	// fmt.Printf("wrote %d bytes\n", bl)
 	w.Flush()
 	return
 }
