@@ -175,7 +175,7 @@ func (t *RefCountTrie) DumpToFile(fname string) (err error) {
 		err = errors.New(fmt.Sprintf("Error writing to dump file: %v", err))
 		return
 	}
-	log.Printf("wrote %d bytes\n", bl)
+	log.Printf("wrote %d bytes to dumpfile %s\n", bl, fname)
 	w.Flush()
 	t.Root.Lock()
 	t.OpsCount -= t.DumpOpsCount
