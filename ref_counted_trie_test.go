@@ -44,6 +44,33 @@ func TestRefCountTrieAddSmallBig(t *testing.T) {
 	}
 }
 
+func TestRefCountTrieGetBranch(t *testing.T) {
+	tr := NewRefCountTrie()
+	tr.Add("test")
+	tr.Add("testing")
+	t.Logf("\n%s", tr.Dump())
+
+	b1 := tr.GetBranch("test")
+	if b1 == nil {
+		t.Error("Expected to find a branch for 'test'.")
+	}
+
+	b2 := tr.GetBranch("tests")
+	if b2 != nil {
+		t.Error("Expected not to find a branch for 'tests'.")
+	}
+
+	b3 := tr.GetBranch("testing")
+	if b3 == nil {
+		t.Error("Expected to find a branch for 'testing'.")
+	}
+
+	b4 := tr.GetBranch("testi")
+	if b4 != nil {
+		t.Error("Expected not to find a branch for 'testi'.")
+	}
+}
+
 func TestRefCountTrieAddBigSmallMulti(t *testing.T) {
 	tr := NewRefCountTrie()
 	tr.Add("testing")
