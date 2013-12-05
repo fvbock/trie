@@ -307,6 +307,35 @@ func (b *RefCountBranch) hasCount(entry []byte) (exists bool, count int64) {
 }
 
 /*
+TODO: refactor has and hasCount with this one as base
+*/
+func (b *RefCountBranch) getBranch(entry []byte) (be *RefCountBranch) {
+	leafLen := len(b.LeafValue)
+	entryLen := len(entry)
+
+	if entryLen >= leafLen {
+		for i, pb := range b.LeafValue {
+			if pb != entry[i] {
+				return
+			}
+		}
+	} else {
+		return
+	}
+
+	if entryLen > leafLen {
+		if br, present := b.Branches[entry[leafLen]]; present {
+			return br.getBranch(entry[leafLen+1:])
+		} else {
+			return
+		}
+	} else if entryLen == leafLen && b.End {
+		be = b
+	}
+	return
+}
+
+/*
  */
 func (b *RefCountBranch) hasPrefix(prefix []byte) bool {
 	exists, _ := b.hasPrefixCount(prefix)

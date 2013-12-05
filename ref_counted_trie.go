@@ -68,6 +68,13 @@ func (t *RefCountTrie) Delete(entry string) bool {
 }
 
 /*
+GetBranch returns the branch end if the `entry` exists in the `Trie`
+*/
+func (t *RefCountTrie) GetBranch(entry string) *RefCountBranch {
+	return t.Root.getBranch([]byte(entry))
+}
+
+/*
 Has returns true if the `entry` exists in the `Trie`
 */
 func (t *RefCountTrie) Has(entry string) bool {
@@ -185,20 +192,66 @@ func (t *RefCountTrie) DumpToFile(fname string) (err error) {
 }
 
 /*
+RCTMergeFromFile loads a gib encoded wordlist from a file and Add() them to the `Trie`.
+*/
+// TODO: write tests for merge
+func (t *RefCountTrie) RCTMergeFromFile(fname string) (err error) {
+	entries, err := loadTrieFile(fname)
+	if err != nil {
+		return
+	}
+	log.Printf("Got %v entries\n", len(entries))
+	startTime := time.Now()
+	for _, mi := range entries {
+		b := t.GetBranch(mi.Value)
+		if b != nil {
+			b.Lock()
+			b.Count += mi.Count
+			b.Unlock()
+		} else {
+			b := t.Add(mi.Value)
+			b.Lock()
+			b.Count = mi.Count
+			b.Unlock()
+		}
+	}
+	log.Printf("merging words to index took: %v\n", time.Since(startTime))
+	return
+}
+
+/*
 LoadFromFile loads a gib encoded wordlist from a file and creates a new Trie
 by Add()ing all of them.
 */
 func RCTLoadFromFile(fname string) (tr *RefCountTrie, err error) {
+	tr = NewRefCountTrie()
+	entries, err := loadTrieFile(fname)
+	if err != nil {
+		return
+	}
+	log.Printf("Got %v entries\n", len(entries))
+	startTime := time.Now()
+	for _, mi := range entries {
+		b := tr.Add(mi.Value)
+		b.Count = mi.Count
+	}
+	log.Printf("adding words to index took: %v\n", time.Since(startTime))
+
+	tr.DumpOpsCount = 0
+	tr.OpsCount = 0
+
+	return
+}
+
+func loadTrieFile(fname string) (entries []*MemberInfo, err error) {
 	log.Println("Load trie from", fname)
 	f, err := os.Open(fname)
 	if err != nil {
 		err = errors.New(fmt.Sprintf("Could not open Trie file: %v", err))
-		tr = NewRefCountTrie()
 	} else {
 		defer f.Close()
 
 		buf := bufio.NewReader(f)
-		var entries []*MemberInfo
 		dec := gob.NewDecoder(buf)
 		if err = dec.Decode(&entries); err != nil {
 			if err == io.EOF && entries == nil {
@@ -209,16 +262,6 @@ func RCTLoadFromFile(fname string) (tr *RefCountTrie, err error) {
 				return
 			}
 		}
-
-		tr = NewRefCountTrie()
-		startTime := time.Now()
-		for _, mi := range entries {
-			b := tr.Add(mi.Value)
-			b.Count = mi.Count
-		}
-		tr.DumpOpsCount = 0
-		tr.OpsCount = 0
-		log.Printf("adding words to index took: %v\n", time.Since(startTime))
 	}
 
 	return
