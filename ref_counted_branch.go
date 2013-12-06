@@ -41,9 +41,7 @@ func (b *RefCountBranch) NewBranch() *RefCountBranch {
 Add adds an entry to the Branch
 */
 func (b *RefCountBranch) add(entry []byte) (addedBranch *RefCountBranch) {
-	// log.Println("O ADD ", string(entry))
 	if b.LeafValue == nil && len(b.Branches) == 0 {
-		// log.Println("ADD 1")
 		b.LeafValue = entry
 		b.setEnd(true)
 		addedBranch = b
@@ -54,7 +52,6 @@ func (b *RefCountBranch) add(entry []byte) (addedBranch *RefCountBranch) {
 	// so the tail was the current branches index but no value
 	// to push. just mark the current idx position as End
 	if len(b.LeafValue) == 0 && len(entry) == 0 {
-		// log.Println("ADD 2")
 		b.setEnd(true)
 		addedBranch = b
 		return
@@ -80,7 +77,6 @@ func (b *RefCountBranch) add(entry []byte) (addedBranch *RefCountBranch) {
 	// the new leaf is smaller than the current leaf.
 	// we will push the old leaf down the branch
 	if newLeafLen < len(b.LeafValue) {
-		// log.Println("ADD 3")
 		tail := b.LeafValue[newLeafLen:]
 		idx := tail[0]
 		newBranch := b.NewBranch()
@@ -90,21 +86,17 @@ func (b *RefCountBranch) add(entry []byte) (addedBranch *RefCountBranch) {
 		newBranch.Branches, b.Branches = b.Branches, newBranch.Branches
 		newBranch.End, b.End = b.End, newBranch.End
 		if newBranch.End {
-			// log.Println("ADD 3a", string(newBranch.LeafValue))
 			if b.Count > 0 {
 				newBranch.Count = b.Count
 			} else {
 				newBranch.Count = 1
 			}
 		} else {
-			// log.Println("ADD 3b", string(newBranch.LeafValue))
 			newBranch.Count = 0
 		}
 		if b.End {
-			// log.Println("ADD 3c", string(b.LeafValue))
 			b.Count = 1
 		} else {
-			// log.Println("ADD 3d", string(b.LeafValue))
 			b.Count = 0
 		}
 		b.Branches[idx] = newBranch
@@ -195,10 +187,8 @@ func (b *RefCountBranch) prefixMembers(branchPrefix []byte, searchPrefix []byte)
 /*
  */
 func (b *RefCountBranch) delete(entry []byte) (deleted bool) {
-	// log.Println("O DEL ", string(entry))
 	leafLen := len(b.LeafValue)
 	entryLen := len(entry)
-	// log.Println("DEL 0", string(entry), b.End, b.Count)
 	// does the leafValue match?
 	if leafLen > 0 {
 		if entryLen >= leafLen {
@@ -221,49 +211,29 @@ func (b *RefCountBranch) delete(entry []byte) (deleted bool) {
 	if b.End && ((entryLen - leafLen) == 0) {
 		b.setEnd(false)
 		if len(b.Branches) == 0 && b.Count == 0 {
-			// log.Println("DEL 1a")
-			// b.Lock()
 			b.LeafValue = nil
-			// b.Unlock()
 		} else if len(b.Branches) == 1 && b.Count == 0 {
-			// log.Println("DEL 1b")
 			b = b.pullUp()
 		}
 		return true
 	}
 
-	// log.Println("DEL 2", string(entry), string(b.LeafValue), b.End, b.Count)
 	// if End == true and there are no Branches we can delete the branch because either the idx or the LeafValue mark the end - if it is matched it can be deleted
 	// this is being checked in the branch above
 	// prefix is matched. check for branches
 	if leafLen < entryLen && b.hasBranch(entry[leafLen]) {
-		// log.Println("DEL 3", string(entry), b.End, b.Count, entry[leafLen])
 		// next branch matches. check the leaf/branches again
 		nextBranch := b.Branches[entry[leafLen]]
-		// log.Println("DEL 3a", string(entry), nextBranch.End, nextBranch.Count)
 		if len(nextBranch.Branches) == 0 && nextBranch.Count == 0 {
-			// delete nextBranch
-			// log.Println("DEL 4", string(entry), nextBranch.End, nextBranch.Count)
-			// b.Lock()
 			delete(b.Branches, entry[leafLen])
-			// b.Unlock()
 			return true
 		} else {
-			// log.Println("DEL 5", string(entry), b.End, b.Count)
-			// b.Lock()
 			deleted := nextBranch.delete(entry[leafLen+1:])
-			// b.Unlock()
 			if deleted && len(nextBranch.Branches) == 0 && !nextBranch.End {
-				// log.Println("DEL 6", string(entry), b.End, b.Count)
-				// b.Lock()
 				delete(b.Branches, entry[leafLen])
-				// b.Unlock()
 				// dangling leaf value?
 				if len(b.Branches) == 0 && b.Count == 0 {
-					// log.Println("DEL 7", string(entry), b.End, b.Count)
-					// b.Lock()
 					b.LeafValue = nil
-					// b.Unlock()
 				}
 			}
 			return deleted
@@ -438,7 +408,6 @@ func (b *RefCountBranch) matchesLeaf(entry []byte) bool {
 /*
  */
 func (b *RefCountBranch) pullUp() *RefCountBranch {
-	// b.Lock()
 	if len(b.Branches) == 1 {
 		for k, nextBranch := range b.Branches {
 			if len(nextBranch.Branches) == 0 {
@@ -450,18 +419,14 @@ func (b *RefCountBranch) pullUp() *RefCountBranch {
 			b.Branches = nextBranch.Branches
 			b.Count = nextBranch.Count
 		}
-		// b.Unlock()
 		return b.pullUp()
 	}
-	// b.Unlock()
 	return b
 }
 
 func (b *RefCountBranch) setEnd(flag bool) {
 	if flag {
-		// log.Println("b.Count += 1", b.Count)
 		b.Count += 1
-		// log.Println("b.Count now", b.Count)
 	} else {
 		if b.End && b.Count > 0 {
 			b.Count -= 1

@@ -140,6 +140,19 @@ func (t *RefCountTrie) PrefixMembersList(prefix string) (members []string) {
 	return
 }
 
+/*
+Dump returns a string representation of the `Trie`
+*/
+func (t *RefCountTrie) Dump() string {
+	return t.Root.Dump(0)
+}
+
+/*
+ */
+func (t *RefCountTrie) PrintDump() {
+	t.Root.PrintDump()
+}
+
 func (t *RefCountTrie) DumpToFileWithMinOps(fname string) (err error) {
 	if t.OpsCount >= t.PersistThresholdOpsCount {
 		err = t.DumpToFile(fname)
@@ -265,17 +278,4 @@ func loadTrieFile(fname string) (entries []*MemberInfo, err error) {
 	}
 
 	return
-}
-
-/*
-Dump returns a string representation of the `Trie`
-*/
-func (t *RefCountTrie) Dump() string {
-	return t.Root.Dump(0)
-}
-
-/*
- */
-func (t *RefCountTrie) PrintDump() {
-	t.Root.PrintDump()
 }
