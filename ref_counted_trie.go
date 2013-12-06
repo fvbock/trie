@@ -15,10 +15,10 @@ import (
 // TRIE
 
 type RefCountTrie struct {
-	Root                     *RefCountBranch
-	OpsCount                 int
-	DumpOpsCount             int
-	PersistThresholdOpsCount int
+	Root *RefCountBranch
+	// OpsCount                 int
+	// DumpOpsCount             int
+	// PersistThresholdOpsCount int
 	// PersistThresholdTime time.Duration
 }
 
@@ -27,9 +27,9 @@ NewTrie returns the pointer to a new Trie with an initiallized root Branch
 */
 func NewRefCountTrie() *RefCountTrie {
 	t := &RefCountTrie{
-		OpsCount:                 0,
-		DumpOpsCount:             0,
-		PersistThresholdOpsCount: 0,
+	// OpsCount:                 0,
+	// DumpOpsCount:             0,
+	// PersistThresholdOpsCount: 0,
 	}
 	t.Root = &RefCountBranch{
 		Branches: make(map[byte]*RefCountBranch),
@@ -44,7 +44,7 @@ was made at - or rather where the end of the entry was marked.
 func (t *RefCountTrie) Add(entry string) *RefCountBranch {
 	t.Root.Lock()
 	b := t.Root.add([]byte(entry))
-	t.OpsCount += 1
+	// t.OpsCount += 1
 	t.Root.Unlock()
 	return b
 }
@@ -62,7 +62,7 @@ func (t *RefCountTrie) Delete(entry string) bool {
 	}
 	t.Root.Lock()
 	deleted := t.Root.delete([]byte(entry))
-	t.OpsCount += 1
+	// t.OpsCount += 1
 	t.Root.Unlock()
 	return deleted
 }
@@ -153,14 +153,14 @@ func (t *RefCountTrie) PrintDump() {
 	t.Root.PrintDump()
 }
 
-func (t *RefCountTrie) DumpToFileWithMinOps(fname string) (err error) {
-	if t.OpsCount >= t.PersistThresholdOpsCount {
-		err = t.DumpToFile(fname)
-	} else {
-		// log.Println(t.OpsCount)
-	}
-	return
-}
+// func (t *RefCountTrie) DumpToFileWithMinOps(fname string) (err error) {
+// 	if t.OpsCount >= t.PersistThresholdOpsCount {
+// 		err = t.DumpToFile(fname)
+// 	} else {
+// 		// log.Println(t.OpsCount)
+// 	}
+// 	return
+// }
 
 /*
 DumpToFile dumps all values into a slice of strings and writes that to a file
@@ -171,7 +171,7 @@ directly support structs with a sync.Mutex on them.
 */
 func (t *RefCountTrie) DumpToFile(fname string) (err error) {
 	t.Root.Lock()
-	t.DumpOpsCount = t.OpsCount
+	// t.DumpOpsCount = t.OpsCount
 	entries := t.Members()
 	t.Root.Unlock()
 
@@ -198,8 +198,8 @@ func (t *RefCountTrie) DumpToFile(fname string) (err error) {
 	log.Printf("wrote %d bytes to dumpfile %s\n", bl, fname)
 	w.Flush()
 	t.Root.Lock()
-	t.OpsCount -= t.DumpOpsCount
-	t.DumpOpsCount = 0
+	// t.OpsCount -= t.DumpOpsCount
+	// t.DumpOpsCount = 0
 	t.Root.Unlock()
 	return
 }
@@ -250,8 +250,8 @@ func RCTLoadFromFile(fname string) (tr *RefCountTrie, err error) {
 	}
 	log.Printf("adding words to index took: %v\n", time.Since(startTime))
 
-	tr.DumpOpsCount = 0
-	tr.OpsCount = 0
+	// tr.DumpOpsCount = 0
+	// tr.OpsCount = 0
 
 	return
 }
