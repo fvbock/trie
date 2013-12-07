@@ -6,8 +6,6 @@ import (
 	"sync"
 )
 
-// BRANCH
-
 type MemberInfo struct {
 	Value string
 	Count int64
@@ -20,7 +18,7 @@ func (m *MemberInfo) String() string {
 type Branch struct {
 	sync.RWMutex
 	Branches  map[byte]*Branch
-	LeafValue []byte // tail end
+	LeafValue []byte
 	End       bool
 	Count     int64
 }
