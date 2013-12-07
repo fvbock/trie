@@ -12,27 +12,18 @@ import (
 	"time"
 )
 
-// TRIE
-
 type Trie struct {
 	Root *Branch
-	// OpsCount                 int
-	// DumpOpsCount             int
-	// PersistThresholdOpsCount int
-	// PersistThresholdTime time.Duration
 }
 
 /*
-NewTrie returns the pointer to a new Trie with an initiallized root Branch
+NewTrie returns the pointer to a new Trie with an initialized root Branch
 */
 func NewTrie() *Trie {
 	t := &Trie{
-	// OpsCount:                 0,
-	// DumpOpsCount:             0,
-	// PersistThresholdOpsCount: 0,
-	}
-	t.Root = &Branch{
-		Branches: make(map[byte]*Branch),
+		Root: &Branch{
+			Branches: make(map[byte]*Branch),
+		},
 	}
 	return t
 }
@@ -44,7 +35,6 @@ was made at - or rather where the end of the entry was marked.
 func (t *Trie) Add(entry string) *Branch {
 	t.Root.Lock()
 	b := t.Root.add([]byte(entry))
-	// t.OpsCount += 1
 	t.Root.Unlock()
 	return b
 }
@@ -62,7 +52,6 @@ func (t *Trie) Delete(entry string) bool {
 	}
 	t.Root.Lock()
 	deleted := t.Root.delete([]byte(entry))
-	// t.OpsCount += 1
 	t.Root.Unlock()
 	return deleted
 }
@@ -153,15 +142,6 @@ func (t *Trie) PrintDump() {
 	t.Root.PrintDump()
 }
 
-// func (t *Trie) DumpToFileWithMinOps(fname string) (err error) {
-// 	if t.OpsCount >= t.PersistThresholdOpsCount {
-// 		err = t.DumpToFile(fname)
-// 	} else {
-// 		// log.Println(t.OpsCount)
-// 	}
-// 	return
-// }
-
 /*
 DumpToFile dumps all values into a slice of strings and writes that to a file
 using encoding/gob.
@@ -171,7 +151,6 @@ directly support structs with a sync.Mutex on them.
 */
 func (t *Trie) DumpToFile(fname string) (err error) {
 	t.Root.Lock()
-	// t.DumpOpsCount = t.OpsCount
 	entries := t.Members()
 	t.Root.Unlock()
 
@@ -198,17 +177,15 @@ func (t *Trie) DumpToFile(fname string) (err error) {
 	log.Printf("wrote %d bytes to dumpfile %s\n", bl, fname)
 	w.Flush()
 	t.Root.Lock()
-	// t.OpsCount -= t.DumpOpsCount
-	// t.DumpOpsCount = 0
 	t.Root.Unlock()
 	return
 }
 
 /*
-RCTMergeFromFile loads a gib encoded wordlist from a file and Add() them to the `Trie`.
+MergeFromFile loads a gib encoded wordlist from a file and Add() them to the `Trie`.
 */
 // TODO: write tests for merge
-func (t *Trie) RCTMergeFromFile(fname string) (err error) {
+func (t *Trie) MergeFromFile(fname string) (err error) {
 	entries, err := loadTrieFile(fname)
 	if err != nil {
 		return
@@ -236,7 +213,7 @@ func (t *Trie) RCTMergeFromFile(fname string) (err error) {
 LoadFromFile loads a gib encoded wordlist from a file and creates a new Trie
 by Add()ing all of them.
 */
-func RCTLoadFromFile(fname string) (tr *Trie, err error) {
+func LoadFromFile(fname string) (tr *Trie, err error) {
 	tr = NewTrie()
 	entries, err := loadTrieFile(fname)
 	if err != nil {
@@ -249,9 +226,6 @@ func RCTLoadFromFile(fname string) (tr *Trie, err error) {
 		b.Count = mi.Count
 	}
 	log.Printf("adding words to index took: %v\n", time.Since(startTime))
-
-	// tr.DumpOpsCount = 0
-	// tr.OpsCount = 0
 
 	return
 }

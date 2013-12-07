@@ -200,8 +200,8 @@ func TestTrieMembersCount(t *testing.T) {
 
 func TestTriePrefixMembersCountFromFile(t *testing.T) {
 	tr := NewTrie()
-	tr, err := RCTLoadFromFile("testfiles/trie_idx_5018d345558fbe46c4000001")
-	// tr, err := RCTLoadFromFile("/tmp/trie_idx_5018d345558fbe46c4000001")
+	tr, err := LoadFromFile("testfiles/trie_idx_5018d345558fbe46c4000001")
+	// tr, err := LoadFromFile("/tmp/trie_idx_5018d345558fbe46c4000001")
 	if err != nil {
 		t.Errorf("Failed to load Trie from file: %v", err)
 	}
@@ -604,7 +604,7 @@ func TestTrieMultiAdd(t *testing.T) {
 	t.Log(tr.Members())
 }
 
-func TestTrieDumpToFileRCTLoadFromFile(t *testing.T) {
+func TestTrieDumpToFileLoadFromFile(t *testing.T) {
 	tr := NewTrie()
 	var prefix = "prefix"
 	var words []string
@@ -634,9 +634,9 @@ func TestTrieDumpToFileRCTLoadFromFile(t *testing.T) {
 		}
 		n++
 	}
-	tr.DumpToFile("testfiles/TestDumpToFileRCTLoadFromFile")
+	tr.DumpToFile("testfiles/TestDumpToFileLoadFromFile")
 
-	loadedTrie, err := RCTLoadFromFile("testfiles/TestDumpToFileRCTLoadFromFile")
+	loadedTrie, err := LoadFromFile("testfiles/TestDumpToFileLoadFromFile")
 	if err != nil {
 		t.Errorf("Failed to load Trie from file: %v", err)
 	}
@@ -667,7 +667,7 @@ func TestTrieDumpToFileRCTLoadFromFile(t *testing.T) {
 }
 
 func TestTrieLoadFromFileEmpty(t *testing.T) {
-	loadedTrie, err := RCTLoadFromFile("testfiles/empty")
+	loadedTrie, err := LoadFromFile("testfiles/empty")
 	if err != nil {
 		t.Errorf("Failed to load Trie from file: %v", err)
 	}
@@ -676,7 +676,7 @@ func TestTrieLoadFromFileEmpty(t *testing.T) {
 	t.Log(loadedTrieMembers)
 	t.Log(loadedTrieMembers.Len())
 	if loadedTrieMembers.Len() > 0 {
-		t.Error("Expected 0 Members from RCTLoadFromFile() with an empty file.")
+		t.Error("Expected 0 Members from LoadFromFile() with an empty file.")
 	}
 }
 
