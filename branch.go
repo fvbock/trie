@@ -17,20 +17,20 @@ func (m *MemberInfo) String() string {
 	return fmt.Sprintf("%s(%v)", m.Value, m.Count)
 }
 
-type RefCountBranch struct {
+type Branch struct {
 	sync.RWMutex
-	Branches  map[byte]*RefCountBranch
+	Branches  map[byte]*Branch
 	LeafValue []byte // tail end
 	End       bool
 	Count     int64
 }
 
 /*
-NewRefCountBranch returns a new initialezed *RefCountBranch
+NewBranch returns a new initialezed *Branch
 */
-func (b *RefCountBranch) NewBranch() *RefCountBranch {
-	return &RefCountBranch{
-		Branches: make(map[byte]*RefCountBranch),
+func (b *Branch) NewBranch() *Branch {
+	return &Branch{
+		Branches: make(map[byte]*Branch),
 		Count:    0,
 	}
 }
@@ -38,7 +38,7 @@ func (b *RefCountBranch) NewBranch() *RefCountBranch {
 /*
 Add adds an entry to the Branch
 */
-func (b *RefCountBranch) add(entry []byte) (addedBranch *RefCountBranch) {
+func (b *Branch) add(entry []byte) (addedBranch *Branch) {
 	if b.LeafValue == nil && len(b.Branches) == 0 {
 		b.LeafValue = entry
 		b.setEnd(true)
@@ -127,7 +127,7 @@ func (b *RefCountBranch) add(entry []byte) (addedBranch *RefCountBranch) {
 /*
 Members returns slice of all Members of the Branch prepended with `branchPrefix`
 */
-func (b *RefCountBranch) members(branchPrefix []byte) (members []*MemberInfo) {
+func (b *Branch) members(branchPrefix []byte) (members []*MemberInfo) {
 	if b.End {
 		members = append(members, &MemberInfo{string(append(branchPrefix, b.LeafValue...)), b.Count})
 	}
@@ -141,7 +141,7 @@ func (b *RefCountBranch) members(branchPrefix []byte) (members []*MemberInfo) {
 /*
 prefixMembers returns a slice of all Members of the Branch matching the given prefix. The values returned are prepended with `branchPrefix`
 */
-func (b *RefCountBranch) prefixMembers(branchPrefix []byte, searchPrefix []byte) (members []*MemberInfo) {
+func (b *Branch) prefixMembers(branchPrefix []byte, searchPrefix []byte) (members []*MemberInfo) {
 	leafLen := len(b.LeafValue)
 	searchPrefixLen := len(searchPrefix)
 
@@ -184,7 +184,7 @@ func (b *RefCountBranch) prefixMembers(branchPrefix []byte, searchPrefix []byte)
 
 /*
  */
-func (b *RefCountBranch) delete(entry []byte) (deleted bool) {
+func (b *Branch) delete(entry []byte) (deleted bool) {
 	leafLen := len(b.LeafValue)
 	entryLen := len(entry)
 	// does the leafValue match?
@@ -243,12 +243,12 @@ func (b *RefCountBranch) delete(entry []byte) (deleted bool) {
 
 /*
  */
-func (b *RefCountBranch) has(entry []byte) bool {
+func (b *Branch) has(entry []byte) bool {
 	exists, _ := b.hasCount(entry)
 	return exists
 }
 
-func (b *RefCountBranch) hasCount(entry []byte) (exists bool, count int64) {
+func (b *Branch) hasCount(entry []byte) (exists bool, count int64) {
 	leafLen := len(b.LeafValue)
 	entryLen := len(entry)
 
@@ -277,7 +277,7 @@ func (b *RefCountBranch) hasCount(entry []byte) (exists bool, count int64) {
 /*
 TODO: refactor has and hasCount with this one as base
 */
-func (b *RefCountBranch) getBranch(entry []byte) (be *RefCountBranch) {
+func (b *Branch) getBranch(entry []byte) (be *Branch) {
 	leafLen := len(b.LeafValue)
 	entryLen := len(entry)
 
@@ -305,12 +305,12 @@ func (b *RefCountBranch) getBranch(entry []byte) (be *RefCountBranch) {
 
 /*
  */
-func (b *RefCountBranch) hasPrefix(prefix []byte) bool {
+func (b *Branch) hasPrefix(prefix []byte) bool {
 	exists, _ := b.hasPrefixCount(prefix)
 	return exists
 }
 
-func (b *RefCountBranch) hasPrefixCount(prefix []byte) (exists bool, count int64) {
+func (b *Branch) hasPrefixCount(prefix []byte) (exists bool, count int64) {
 	leafLen := len(b.LeafValue)
 	prefixLen := len(prefix)
 
@@ -343,7 +343,7 @@ func (b *RefCountBranch) hasPrefixCount(prefix []byte) (exists bool, count int64
 
 /*
  */
-func (b *RefCountBranch) Dump(depth int) (out string) {
+func (b *Branch) Dump(depth int) (out string) {
 	if len(b.LeafValue) > 0 {
 		if b.End {
 			out += fmt.Sprintf("%s V:%v (%v)\n", strings.Repeat(PADDING_CHAR, depth), string(b.LeafValue), b.Count)
@@ -370,13 +370,13 @@ func (b *RefCountBranch) Dump(depth int) (out string) {
 
 /*
  */
-func (b *RefCountBranch) hasBranches() bool {
+func (b *Branch) hasBranches() bool {
 	return len(b.Branches) == 0
 }
 
 /*
  */
-func (b *RefCountBranch) hasBranch(idx byte) bool {
+func (b *Branch) hasBranch(idx byte) bool {
 	if _, present := b.Branches[idx]; present {
 		return true
 	}
@@ -385,7 +385,7 @@ func (b *RefCountBranch) hasBranch(idx byte) bool {
 
 /*
  */
-func (b *RefCountBranch) matchesLeaf(entry []byte) bool {
+func (b *Branch) matchesLeaf(entry []byte) bool {
 	leafLen := len(b.LeafValue)
 	entryLen := len(entry)
 
@@ -405,7 +405,7 @@ func (b *RefCountBranch) matchesLeaf(entry []byte) bool {
 
 /*
  */
-func (b *RefCountBranch) pullUp() *RefCountBranch {
+func (b *Branch) pullUp() *Branch {
 	if len(b.Branches) == 1 {
 		for k, nextBranch := range b.Branches {
 			if len(nextBranch.Branches) == 0 {
@@ -422,7 +422,7 @@ func (b *RefCountBranch) pullUp() *RefCountBranch {
 	return b
 }
 
-func (b *RefCountBranch) setEnd(flag bool) {
+func (b *Branch) setEnd(flag bool) {
 	if flag {
 		b.Count += 1
 	} else {
@@ -437,10 +437,10 @@ func (b *RefCountBranch) setEnd(flag bool) {
 	return
 }
 
-func (b *RefCountBranch) String() string {
+func (b *Branch) String() string {
 	return b.Dump(0)
 }
 
-func (b *RefCountBranch) PrintDump() {
+func (b *Branch) PrintDump() {
 	fmt.Printf("\n\n%s\n\n", b.Dump(0))
 }

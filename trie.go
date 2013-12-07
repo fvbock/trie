@@ -14,8 +14,8 @@ import (
 
 // TRIE
 
-type RefCountTrie struct {
-	Root *RefCountBranch
+type Trie struct {
+	Root *Branch
 	// OpsCount                 int
 	// DumpOpsCount             int
 	// PersistThresholdOpsCount int
@@ -25,14 +25,14 @@ type RefCountTrie struct {
 /*
 NewTrie returns the pointer to a new Trie with an initiallized root Branch
 */
-func NewRefCountTrie() *RefCountTrie {
-	t := &RefCountTrie{
+func NewTrie() *Trie {
+	t := &Trie{
 	// OpsCount:                 0,
 	// DumpOpsCount:             0,
 	// PersistThresholdOpsCount: 0,
 	}
-	t.Root = &RefCountBranch{
-		Branches: make(map[byte]*RefCountBranch),
+	t.Root = &Branch{
+		Branches: make(map[byte]*Branch),
 	}
 	return t
 }
@@ -41,7 +41,7 @@ func NewRefCountTrie() *RefCountTrie {
 Add adds an entry to the trie and returns the branch node that the insertion
 was made at - or rather where the end of the entry was marked.
 */
-func (t *RefCountTrie) Add(entry string) *RefCountBranch {
+func (t *Trie) Add(entry string) *Branch {
 	t.Root.Lock()
 	b := t.Root.add([]byte(entry))
 	// t.OpsCount += 1
@@ -56,7 +56,7 @@ false otherwise. Note that the return value says something about the previous
 existence of the entry - not whether it has been completely removed or just
 its count decremented.
 */
-func (t *RefCountTrie) Delete(entry string) bool {
+func (t *Trie) Delete(entry string) bool {
 	if len(entry) == 0 {
 		return false
 	}
@@ -70,14 +70,14 @@ func (t *RefCountTrie) Delete(entry string) bool {
 /*
 GetBranch returns the branch end if the `entry` exists in the `Trie`
 */
-func (t *RefCountTrie) GetBranch(entry string) *RefCountBranch {
+func (t *Trie) GetBranch(entry string) *Branch {
 	return t.Root.getBranch([]byte(entry))
 }
 
 /*
 Has returns true if the `entry` exists in the `Trie`
 */
-func (t *RefCountTrie) Has(entry string) bool {
+func (t *Trie) Has(entry string) bool {
 	return t.Root.has([]byte(entry))
 }
 
@@ -85,14 +85,14 @@ func (t *RefCountTrie) Has(entry string) bool {
 HasCount returns true  if the `entry` exists in the `Trie`. The second returned
 value is the count how often the entry has been set.
 */
-func (t *RefCountTrie) HasCount(entry string) (exists bool, count int64) {
+func (t *Trie) HasCount(entry string) (exists bool, count int64) {
 	return t.Root.hasCount([]byte(entry))
 }
 
 /*
 HasPrefix returns true if the the `Trie` contains entries with the given prefix
 */
-func (t *RefCountTrie) HasPrefix(prefix string) bool {
+func (t *Trie) HasPrefix(prefix string) bool {
 	return t.Root.hasPrefix([]byte(prefix))
 }
 
@@ -100,21 +100,21 @@ func (t *RefCountTrie) HasPrefix(prefix string) bool {
 HasPrefixCount returns true if the the `Trie` contains entries with the given
 prefix. The second returned value is the count how often the entry has been set.
 */
-func (t *RefCountTrie) HasPrefixCount(prefix string) (exists bool, count int64) {
+func (t *Trie) HasPrefixCount(prefix string) (exists bool, count int64) {
 	return t.Root.hasPrefixCount([]byte(prefix))
 }
 
 /*
 Members returns all entries of the Trie with their counts as MemberInfo
 */
-func (t *RefCountTrie) Members() []*MemberInfo {
+func (t *Trie) Members() []*MemberInfo {
 	return t.Root.members([]byte{})
 }
 
 /*
 Members returns a Slice of all entries of the Trie
 */
-func (t *RefCountTrie) MembersList() (members []string) {
+func (t *Trie) MembersList() (members []string) {
 	for _, mi := range t.Root.members([]byte{}) {
 		members = append(members, mi.Value)
 	}
@@ -125,7 +125,7 @@ func (t *RefCountTrie) MembersList() (members []string) {
 PrefixMembers returns all entries of the Trie that have the given prefix
 with their counts as MemberInfo
 */
-func (t *RefCountTrie) PrefixMembers(prefix string) []*MemberInfo {
+func (t *Trie) PrefixMembers(prefix string) []*MemberInfo {
 	return t.Root.prefixMembers([]byte{}, []byte(prefix))
 }
 
@@ -133,7 +133,7 @@ func (t *RefCountTrie) PrefixMembers(prefix string) []*MemberInfo {
 PrefixMembers returns a List of all entries of the Trie that have the
 given prefix
 */
-func (t *RefCountTrie) PrefixMembersList(prefix string) (members []string) {
+func (t *Trie) PrefixMembersList(prefix string) (members []string) {
 	for _, mi := range t.Root.prefixMembers([]byte{}, []byte(prefix)) {
 		members = append(members, mi.Value)
 	}
@@ -143,17 +143,17 @@ func (t *RefCountTrie) PrefixMembersList(prefix string) (members []string) {
 /*
 Dump returns a string representation of the `Trie`
 */
-func (t *RefCountTrie) Dump() string {
+func (t *Trie) Dump() string {
 	return t.Root.Dump(0)
 }
 
 /*
  */
-func (t *RefCountTrie) PrintDump() {
+func (t *Trie) PrintDump() {
 	t.Root.PrintDump()
 }
 
-// func (t *RefCountTrie) DumpToFileWithMinOps(fname string) (err error) {
+// func (t *Trie) DumpToFileWithMinOps(fname string) (err error) {
 // 	if t.OpsCount >= t.PersistThresholdOpsCount {
 // 		err = t.DumpToFile(fname)
 // 	} else {
@@ -169,7 +169,7 @@ using encoding/gob.
 The Trie itself can currently not be encoded directly because gob does not
 directly support structs with a sync.Mutex on them.
 */
-func (t *RefCountTrie) DumpToFile(fname string) (err error) {
+func (t *Trie) DumpToFile(fname string) (err error) {
 	t.Root.Lock()
 	// t.DumpOpsCount = t.OpsCount
 	entries := t.Members()
@@ -208,7 +208,7 @@ func (t *RefCountTrie) DumpToFile(fname string) (err error) {
 RCTMergeFromFile loads a gib encoded wordlist from a file and Add() them to the `Trie`.
 */
 // TODO: write tests for merge
-func (t *RefCountTrie) RCTMergeFromFile(fname string) (err error) {
+func (t *Trie) RCTMergeFromFile(fname string) (err error) {
 	entries, err := loadTrieFile(fname)
 	if err != nil {
 		return
@@ -236,8 +236,8 @@ func (t *RefCountTrie) RCTMergeFromFile(fname string) (err error) {
 LoadFromFile loads a gib encoded wordlist from a file and creates a new Trie
 by Add()ing all of them.
 */
-func RCTLoadFromFile(fname string) (tr *RefCountTrie, err error) {
-	tr = NewRefCountTrie()
+func RCTLoadFromFile(fname string) (tr *Trie, err error) {
+	tr = NewTrie()
 	entries, err := loadTrieFile(fname)
 	if err != nil {
 		return

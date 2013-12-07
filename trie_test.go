@@ -12,16 +12,16 @@ func init() {
 	runtime.GOMAXPROCS(4)
 }
 
-func TestRefCountTrieAddSingle(t *testing.T) {
-	tr := NewRefCountTrie()
+func TestTrieAddSingle(t *testing.T) {
+	tr := NewTrie()
 	tr.Add("test")
 	if !tr.Root.End {
 		t.Error("Expected Root End to be true")
 	}
 }
 
-func TestRefCountTrieAddBigSmall(t *testing.T) {
-	tr := NewRefCountTrie()
+func TestTrieAddBigSmall(t *testing.T) {
+	tr := NewTrie()
 	tr.Add("testing")
 	tr.Add("tests")
 	if !tr.Root.Branches['i'].End {
@@ -32,8 +32,8 @@ func TestRefCountTrieAddBigSmall(t *testing.T) {
 	}
 }
 
-func TestRefCountTrieAddSmallBig(t *testing.T) {
-	tr := NewRefCountTrie()
+func TestTrieAddSmallBig(t *testing.T) {
+	tr := NewTrie()
 	tr.Add("tests")
 	tr.Add("testing")
 	if !tr.Root.Branches['i'].End {
@@ -44,8 +44,8 @@ func TestRefCountTrieAddSmallBig(t *testing.T) {
 	}
 }
 
-func TestRefCountTrieGetBranch(t *testing.T) {
-	tr := NewRefCountTrie()
+func TestTrieGetBranch(t *testing.T) {
+	tr := NewTrie()
 	tr.Add("test")
 	tr.Add("testing")
 	t.Logf("\n%s", tr.Dump())
@@ -71,8 +71,8 @@ func TestRefCountTrieGetBranch(t *testing.T) {
 	}
 }
 
-func TestRefCountTrieAddBigSmallMulti(t *testing.T) {
-	tr := NewRefCountTrie()
+func TestTrieAddBigSmallMulti(t *testing.T) {
+	tr := NewTrie()
 	tr.Add("testing")
 	tr.Add("testing")
 	tr.Add("tests")
@@ -92,8 +92,8 @@ func TestRefCountTrieAddBigSmallMulti(t *testing.T) {
 	}
 }
 
-func TestRefCountTrieAddSmallBigMulti(t *testing.T) {
-	tr := NewRefCountTrie()
+func TestTrieAddSmallBigMulti(t *testing.T) {
+	tr := NewTrie()
 	tr.Add("tests")
 	tr.Add("tests")
 	tr.Add("testing")
@@ -113,8 +113,8 @@ func TestRefCountTrieAddSmallBigMulti(t *testing.T) {
 	}
 }
 
-func TestRefCountTrieAddTestFirst(t *testing.T) {
-	tr := NewRefCountTrie()
+func TestTrieAddTestFirst(t *testing.T) {
+	tr := NewTrie()
 	tr.Add("test")
 	tr.Add("testing")
 	tr.Add("tests")
@@ -132,8 +132,8 @@ func TestRefCountTrieAddTestFirst(t *testing.T) {
 	}
 }
 
-func TestRefCountTrieAddTestLast(t *testing.T) {
-	tr := NewRefCountTrie()
+func TestTrieAddTestLast(t *testing.T) {
+	tr := NewTrie()
 	tr.Add("testing")
 	tr.Add("tests")
 	tr.Add("test")
@@ -148,8 +148,8 @@ func TestRefCountTrieAddTestLast(t *testing.T) {
 	}
 }
 
-func TestRefCountTrieDump(t *testing.T) {
-	tr := NewRefCountTrie()
+func TestTrieDump(t *testing.T) {
+	tr := NewTrie()
 	tr.Add("teased")
 	tr.Add("test")
 	tr.Add("test")
@@ -158,8 +158,8 @@ func TestRefCountTrieDump(t *testing.T) {
 	t.Logf("\n%s", tr.Dump())
 }
 
-func TestRefCountTrieMembersCount(t *testing.T) {
-	tr := NewRefCountTrie()
+func TestTrieMembersCount(t *testing.T) {
+	tr := NewTrie()
 	tr.Add("teased")
 	tr.Add("test")
 	tr.Add("test")
@@ -187,8 +187,8 @@ func TestRefCountTrieMembersCount(t *testing.T) {
 }
 
 // // todo
-// func TestRefCountTriePrefixMembersCount(t *testing.T) {
-// 	tr := NewRefCountTrie()
+// func TestTriePrefixMembersCount(t *testing.T) {
+// 	tr := NewTrie()
 // 	tr.Add("foo")
 // 	tr.Add("foobar")
 // 	tr.Add("bar")
@@ -198,8 +198,8 @@ func TestRefCountTrieMembersCount(t *testing.T) {
 // 	}
 // }
 
-func TestRefCountTriePrefixMembersCountFromFile(t *testing.T) {
-	tr := NewRefCountTrie()
+func TestTriePrefixMembersCountFromFile(t *testing.T) {
+	tr := NewTrie()
 	tr, err := RCTLoadFromFile("testfiles/trie_idx_5018d345558fbe46c4000001")
 	// tr, err := RCTLoadFromFile("/tmp/trie_idx_5018d345558fbe46c4000001")
 	if err != nil {
@@ -211,23 +211,23 @@ func TestRefCountTriePrefixMembersCountFromFile(t *testing.T) {
 	// tr.PrintDump()
 }
 
-func TestRefCountTrieHasPrefixEmpty(t *testing.T) {
-	tr := NewRefCountTrie()
+func TestTrieHasPrefixEmpty(t *testing.T) {
+	tr := NewTrie()
 	if tr.HasPrefix("test") {
 		t.Error("Expected no prefix test")
 	}
 }
 
-func TestRefCountTrieHasPrefixOne(t *testing.T) {
-	tr := NewRefCountTrie()
+func TestTrieHasPrefixOne(t *testing.T) {
+	tr := NewTrie()
 	tr.Add("test")
 	if !tr.HasPrefix("test") {
 		t.Error("Expected prefix test")
 	}
 }
 
-func TestRefCountTrieHasPrefixMany(t *testing.T) {
-	tr := NewRefCountTrie()
+func TestTrieHasPrefixMany(t *testing.T) {
+	tr := NewTrie()
 	tr.Add("tease")
 	tr.Add("teases")
 	tr.Add("teased")
@@ -247,23 +247,23 @@ func TestRefCountTrieHasPrefixMany(t *testing.T) {
 	}
 }
 
-func TestRefCountTrieHasEmpty(t *testing.T) {
-	tr := NewRefCountTrie()
+func TestTrieHasEmpty(t *testing.T) {
+	tr := NewTrie()
 	if tr.Has("test") {
 		t.Error("Expected no test")
 	}
 }
 
-func TestRefCountTrieHasOne(t *testing.T) {
-	tr := NewRefCountTrie()
+func TestTrieHasOne(t *testing.T) {
+	tr := NewTrie()
 	tr.Add("test")
 	if !tr.Has("test") {
 		t.Error("Expected test")
 	}
 }
 
-func TestRefCountTrieHasMany(t *testing.T) {
-	tr := NewRefCountTrie()
+func TestTrieHasMany(t *testing.T) {
+	tr := NewTrie()
 	tr.Add("tease")
 	tr.Add("teases")
 	tr.Add("teased")
@@ -286,8 +286,8 @@ func TestRefCountTrieHasMany(t *testing.T) {
 	}
 }
 
-func TestRefCountTrieHasPrefixManyMultibyte(t *testing.T) {
-	tr := NewRefCountTrie()
+func TestTrieHasPrefixManyMultibyte(t *testing.T) {
+	tr := NewTrie()
 	tr.Add("日本人")
 	tr.Add("人")
 	tr.Add("日本")
@@ -308,8 +308,8 @@ func TestRefCountTrieHasPrefixManyMultibyte(t *testing.T) {
 	}
 }
 
-func TestRefCountTrieHasManyMultibyte(t *testing.T) {
-	tr := NewRefCountTrie()
+func TestTrieHasManyMultibyte(t *testing.T) {
+	tr := NewTrie()
 	tr.Add("日本人")
 	tr.Add("人")
 	tr.Add("日本")
@@ -333,23 +333,23 @@ func TestRefCountTrieHasManyMultibyte(t *testing.T) {
 	}
 }
 
-func TestRefCountTrieDeleteEmpty(t *testing.T) {
-	tr := NewRefCountTrie()
+func TestTrieDeleteEmpty(t *testing.T) {
+	tr := NewTrie()
 	if tr.Delete("test") {
 		t.Error("Expected false for tr.Delete('test')")
 	}
 }
 
-func TestRefCountTrieDeleteOne(t *testing.T) {
-	tr := NewRefCountTrie()
+func TestTrieDeleteOne(t *testing.T) {
+	tr := NewTrie()
 	tr.Add("test")
 	if !tr.Delete("test") {
 		t.Error("Expected true for tr.Delete('test')")
 	}
 }
 
-func TestRefCountTrieDeleteDouble(t *testing.T) {
-	tr := NewRefCountTrie()
+func TestTrieDeleteDouble(t *testing.T) {
+	tr := NewTrie()
 	tr.Add("foo")
 	tr.Add("test")
 	tr.Add("test")
@@ -365,8 +365,8 @@ func TestRefCountTrieDeleteDouble(t *testing.T) {
 	t.Log(tr.Members())
 }
 
-func TestRefCountTrieDeletePrefixCount(t *testing.T) {
-	tr := NewRefCountTrie()
+func TestTrieDeletePrefixCount(t *testing.T) {
+	tr := NewTrie()
 	tr.Add("foo")
 	tr.Add("foo")
 	tr.Add("foobar")
@@ -400,8 +400,8 @@ func TestRefCountTrieDeletePrefixCount(t *testing.T) {
 	}
 }
 
-func TestRefCountTrieDeleteMany(t *testing.T) {
-	tr := NewRefCountTrie()
+func TestTrieDeleteMany(t *testing.T) {
+	tr := NewTrie()
 	tr.Add("tease")
 	tr.Add("teases")
 	tr.Add("teased")
@@ -468,8 +468,8 @@ func TestRefCountTrieDeleteMany(t *testing.T) {
 	}
 }
 
-func TestRefCountTrieDeleteManyRandom_az(t *testing.T) {
-	tr := NewRefCountTrie()
+func TestTrieDeleteManyRandom_az(t *testing.T) {
+	tr := NewTrie()
 	var prefix = "prefix"
 	var words []string
 	var str []byte
@@ -522,8 +522,8 @@ func TestRefCountTrieDeleteManyRandom_az(t *testing.T) {
 	}
 }
 
-func TestRefCountTrieMultiAdd(t *testing.T) {
-	tr := NewRefCountTrie()
+func TestTrieMultiAdd(t *testing.T) {
+	tr := NewTrie()
 	words := []string{"foodie", "foods", "foodchain", "foodcrave", "food", "人", "日本", "日本語学校", "学校", "日本語"}
 	// words := []string{"日本語", "日本語学校"}
 	// words := []string{"日本語学校", "日本"}
@@ -604,8 +604,8 @@ func TestRefCountTrieMultiAdd(t *testing.T) {
 	t.Log(tr.Members())
 }
 
-func TestRefCountTrieDumpToFileRCTLoadFromFile(t *testing.T) {
-	tr := NewRefCountTrie()
+func TestTrieDumpToFileRCTLoadFromFile(t *testing.T) {
+	tr := NewTrie()
 	var prefix = "prefix"
 	var words []string
 	var str []byte
@@ -666,7 +666,7 @@ func TestRefCountTrieDumpToFileRCTLoadFromFile(t *testing.T) {
 	}
 }
 
-func TestRefCountTrieLoadFromFileEmpty(t *testing.T) {
+func TestTrieLoadFromFileEmpty(t *testing.T) {
 	loadedTrie, err := RCTLoadFromFile("testfiles/empty")
 	if err != nil {
 		t.Errorf("Failed to load Trie from file: %v", err)
@@ -682,9 +682,9 @@ func TestRefCountTrieLoadFromFileEmpty(t *testing.T) {
 
 // some simple benchmarks
 
-func BenchmarkRefCountTrieBenchAdd(b *testing.B) {
+func BenchmarkTrieBenchAdd(b *testing.B) {
 	for x := 0; x < b.N; x++ {
-		tr := NewRefCountTrie()
+		tr := NewTrie()
 		tr.Add("foodie")
 		tr.Add("foods")
 		tr.Add("foodchain")
@@ -698,8 +698,8 @@ func BenchmarkRefCountTrieBenchAdd(b *testing.B) {
 	}
 }
 
-func BenchmarkRefCountTrieBenchHasPrefix(b *testing.B) {
-	tr := NewRefCountTrie()
+func BenchmarkTrieBenchHasPrefix(b *testing.B) {
+	tr := NewTrie()
 	tr.Add("foodie")
 	tr.Add("foods")
 	tr.Add("foodchain")
@@ -721,8 +721,8 @@ func BenchmarkRefCountTrieBenchHasPrefix(b *testing.B) {
 	}
 }
 
-func BenchmarkRefCountTrieBenchHas(b *testing.B) {
-	tr := NewRefCountTrie()
+func BenchmarkTrieBenchHas(b *testing.B) {
+	tr := NewTrie()
 	tr.Add("foodie")
 	tr.Add("foods")
 	tr.Add("foodchain")
