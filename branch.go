@@ -244,39 +244,20 @@ func (b *Branch) delete(entry []byte) (deleted bool) {
 /*
  */
 func (b *Branch) has(entry []byte) bool {
-	exists, _ := b.hasCount(entry)
-	return exists
+	if b.getBranch(entry) != nil {
+		return true
+	}
+	return false
 }
 
-func (b *Branch) hasCount(entry []byte) (exists bool, count int64) {
-	leafLen := len(b.LeafValue)
-	entryLen := len(entry)
-
-	if entryLen >= leafLen {
-		for i, pb := range b.LeafValue {
-			if pb != entry[i] {
-				return false, 0
-			}
-		}
-	} else {
-		return false, 0
-	}
-
-	if entryLen > leafLen {
-		if br, present := b.Branches[entry[leafLen]]; present {
-			return br.hasCount(entry[leafLen+1:])
-		} else {
-			return false, 0
-		}
-	} else if entryLen == leafLen && b.End {
-		return true, b.Count
+func (b *Branch) hasCount(entry []byte) (bool, int64) {
+	br := b.getBranch(entry)
+	if br != nil {
+		return true, br.Count
 	}
 	return false, 0
 }
 
-/*
-TODO: refactor has and hasCount with this one as base
-*/
 func (b *Branch) getBranch(entry []byte) (be *Branch) {
 	leafLen := len(b.LeafValue)
 	entryLen := len(entry)
