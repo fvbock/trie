@@ -683,63 +683,66 @@ func TestTrieLoadFromFileEmpty(t *testing.T) {
 // some simple benchmarks
 
 func BenchmarkTrieBenchAdd(b *testing.B) {
+	randstr := make([][]byte, 100)
+	i := 0
+	for i < 100 {
+		randstr[i] = []byte{}
+		n := 0
+		for n < 100 {
+			randstr[i] = append(randstr[i], byte(rand.Intn(255)))
+			n++
+		}
+		i++
+	}
+
+	tr := NewTrie()
 	for x := 0; x < b.N; x++ {
-		tr := NewTrie()
-		tr.Add("foodie")
-		tr.Add("foods")
-		tr.Add("foodchain")
-		tr.Add("foodcrave")
-		tr.Add("food")
-		tr.Add("人")
-		tr.Add("日本")
-		tr.Add("日本語学校")
-		tr.Add("学校")
-		tr.Add("日本語")
+		tr.Add(string(randstr[x%100]))
 	}
 }
 
 func BenchmarkTrieBenchHasPrefix(b *testing.B) {
 	tr := NewTrie()
-	tr.Add("foodie")
-	tr.Add("foods")
-	tr.Add("foodchain")
-	tr.Add("foodcrave")
-	tr.Add("food")
-	tr.Add("人")
-	tr.Add("日本")
-	tr.Add("日本語学校")
-	tr.Add("学校")
-	tr.Add("日本語")
+	randstr := make([][]byte, 10000)
+	i := 0
+	for i < 10000 {
+		randstr[i] = []byte{}
+		n := 0
+		for n < 100 {
+			randstr[i] = append(randstr[i], byte(rand.Intn(255)))
+			n++
+		}
+		i++
+	}
+
+	for x := 0; x < 100000; x++ {
+		tr.Add(string(randstr[x%10000]))
+	}
 
 	for x := 0; x < b.N; x++ {
-		tr.HasPrefix("foodie")
-		tr.HasPrefix("foodcrave")
-		tr.HasPrefix("日本")
-		tr.HasPrefix("学校")
-		tr.HasPrefix("thisisnotinhere")
-		tr.HasPrefix("学日本校")
+		tr.HasPrefix(string(randstr[x%10000]))
 	}
 }
 
 func BenchmarkTrieBenchHas(b *testing.B) {
 	tr := NewTrie()
-	tr.Add("foodie")
-	tr.Add("foods")
-	tr.Add("foodchain")
-	tr.Add("foodcrave")
-	tr.Add("food")
-	tr.Add("人")
-	tr.Add("日本")
-	tr.Add("日本語学校")
-	tr.Add("学校")
-	tr.Add("日本語")
+	randstr := make([][]byte, 10000)
+	i := 0
+	for i < 10000 {
+		randstr[i] = []byte{}
+		n := 0
+		for n < 100 {
+			randstr[i] = append(randstr[i], byte(rand.Intn(255)))
+			n++
+		}
+		i++
+	}
+
+	for y := 0; y < 100000; y++ {
+		tr.Add(string(randstr[y%10000]))
+	}
 
 	for x := 0; x < b.N; x++ {
-		tr.Has("foodie")
-		tr.Has("foodcrave")
-		tr.Has("日本")
-		tr.Has("学校")
-		tr.Has("thisisnotinhere")
-		tr.Has("学日本校")
+		tr.Has(string(randstr[x%10000]))
 	}
 }
