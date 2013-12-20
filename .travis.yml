@@ -4,3 +4,6 @@ go:
   - 1.0
   - 1.1
   - 1.2
+
+install:
+  - go get github.com/fvbock/uds-go/set
