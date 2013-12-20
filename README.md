@@ -7,6 +7,8 @@ Documentation can be found [at godoc.org](http://godoc.org/github.com/fvbock/tri
 
 Entries are reference counted: If you `Add("foo")` twice and `Del("foo")` it once it will still be found.
 
+[![Build Status](https://travis-ci.org/fvbock/trie.png)](https://travis-ci.org/fvbock/trie)
+
 Example
 =======
 
