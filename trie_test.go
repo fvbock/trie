@@ -198,18 +198,18 @@ func TestTrieMembersCount(t *testing.T) {
 // 	}
 // }
 
-func TestTriePrefixMembersCountFromFile(t *testing.T) {
-	tr := NewTrie()
-	tr, err := LoadFromFile("testfiles/trie_idx_5018d345558fbe46c4000001")
-	// tr, err := LoadFromFile("/tmp/trie_idx_5018d345558fbe46c4000001")
-	if err != nil {
-		t.Errorf("Failed to load Trie from file: %v", err)
-	}
-	t.Logf("\n%v", len(tr.Members()))
-	t.Logf("\n%v", tr.PrefixMembers("test"))
-	t.Logf("\n%v", tr.PrefixMembersList("test"))
-	// tr.PrintDump()
-}
+// func TestTriePrefixMembersCountFromFile(t *testing.T) {
+// 	tr := NewTrie()
+// 	tr, err := LoadFromFile("testfiles/trie_idx_5018d345558fbe46c4000001")
+// 	// tr, err := LoadFromFile("/tmp/trie_idx_5018d345558fbe46c4000001")
+// 	if err != nil {
+// 		t.Errorf("Failed to load Trie from file: %v", err)
+// 	}
+// 	t.Logf("\n%v", len(tr.Members()))
+// 	t.Logf("\n%v", tr.PrefixMembers("test"))
+// 	t.Logf("\n%v", tr.PrefixMembersList("test"))
+// 	// tr.PrintDump()
+// }
 
 func TestTrieHasPrefixEmpty(t *testing.T) {
 	tr := NewTrie()
