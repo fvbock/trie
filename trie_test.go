@@ -1,6 +1,7 @@
 package trie
 
 import (
+	// "fmt"
 	"github.com/fvbock/uds-go/set"
 	"math/rand"
 	"runtime"
@@ -9,7 +10,7 @@ import (
 )
 
 func init() {
-	runtime.GOMAXPROCS(4)
+	runtime.GOMAXPROCS(1)
 }
 
 func TestTrieAddSingle(t *testing.T) {
@@ -69,7 +70,29 @@ func TestTrieGetBranch(t *testing.T) {
 	if b4 != nil {
 		t.Error("Expected not to find a branch for 'testi'.")
 	}
+
+	b5 := tr.GetBranch("tessi")
+	if b5 != nil {
+		t.Error("Expected not to find a branch for 'tessi'.")
+	}
 }
+
+// func TestTrieAddEmptyBranch(t *testing.T) {
+// 	tr := NewTrie()
+// 	tr.Add("foobar")
+// 	tr.Add("fooc")
+// 	if tr.Root.End {
+// 		t.Error("Expected Root End to be false")
+// 	}
+// 	t.Logf("\n%s", tr.Dump())
+// 	// tr.Add("foob")
+// 	// tr.Add("fooba")
+// 	// tr.Add("fooca")
+// 	// t.Logf("\n%s", tr.Dump())
+// 	// if !tr.Root.End {
+// 	// 	t.Error("Expected Root End to be true")
+// 	// }
+// }
 
 func TestTrieAddBigSmallMulti(t *testing.T) {
 	tr := NewTrie()
@@ -181,7 +204,6 @@ func TestTrieMembersCount(t *testing.T) {
 			t.Error("Expected testing to have Count 1")
 			continue
 		}
-		// t.Errorf("Unexpected member: %v", mi)
 	}
 	t.Logf("\n%v", tr.Members())
 }
@@ -198,22 +220,54 @@ func TestTrieMembersCount(t *testing.T) {
 // 	}
 // }
 
-// func TestTriePrefixMembersCountFromFile(t *testing.T) {
-// 	tr := NewTrie()
-// 	tr, err := LoadFromFile("testfiles/trie_idx_5018d345558fbe46c4000001")
-// 	// tr, err := LoadFromFile("/tmp/trie_idx_5018d345558fbe46c4000001")
-// 	if err != nil {
-// 		t.Errorf("Failed to load Trie from file: %v", err)
-// 	}
-// 	t.Logf("\n%v", len(tr.Members()))
-// 	t.Logf("\n%v", tr.PrefixMembers("test"))
-// 	t.Logf("\n%v", tr.PrefixMembersList("test"))
-// 	// tr.PrintDump()
-// }
+func TestTriePrefixMembers(t *testing.T) {
+	tr := NewTrie()
+	tr.Add("teased")
+	tr.Add("test")
+	tr.Add("test")
+	tr.Add("testing")
+	if len(tr.PrefixMembers("test")) != 2 {
+		t.Error("Expected PrefixMembers('test') to have length 2")
+	}
+	if len(tr.PrefixMembers("te")) != 3 {
+		t.Error("Expected PrefixMembers('te') to have length 3")
+	}
+	if len(tr.PrefixMembers("a")) != 0 {
+		t.Error("Expected PrefixMembers('a') to have length 0")
+	}
+	tr.PrintDump()
+	if len(tr.PrefixMembers("ta")) != 0 {
+		t.Error("Expected PrefixMembers('ta') to have length 0")
+	}
+	if len(tr.PrefixMembers("")) != 3 {
+		t.Error("Expected PrefixMembers('') to have length 3")
+	}
+	if len(tr.PrefixMembersList("a")) != 0 {
+		t.Error("Expected PrefixMembersList('a') to have length 0")
+	}
+	if len(tr.PrefixMembersList("")) != 3 {
+		t.Error("Expected PrefixMembersList('') to have length 3")
+	}
+
+	// cover different code paths
+	tr.Add("te")
+	tr.PrintDump()
+	if len(tr.PrefixMembers("a")) != 0 {
+		t.Error("Expected PrefixMembers('a') to have length 0")
+	}
+	tl := len(tr.PrefixMembers("t"))
+	if tl != 4 {
+		t.Errorf("Expected PrefixMembers('t') to have length 4, got %v instead.", tl)
+	}
+}
 
 func TestTrieHasPrefixEmpty(t *testing.T) {
 	tr := NewTrie()
 	if tr.HasPrefix("test") {
+		t.Error("Expected no prefix test")
+	}
+	_, c := tr.HasPrefixCount("test")
+	if c != 0 {
 		t.Error("Expected no prefix test")
 	}
 }
@@ -223,6 +277,10 @@ func TestTrieHasPrefixOne(t *testing.T) {
 	tr.Add("test")
 	if !tr.HasPrefix("test") {
 		t.Error("Expected prefix test")
+	}
+	_, c := tr.HasPrefixCount("test")
+	if c != 1 {
+		t.Error("Expected prefix test to have count 1")
 	}
 }
 
@@ -244,6 +302,36 @@ func TestTrieHasPrefixMany(t *testing.T) {
 	}
 	if !tr.HasPrefix("testing") {
 		t.Error("Expected prefix testing")
+	}
+
+	// prefixCount
+	_, ctest := tr.HasPrefixCount("test")
+	if ctest != 4 {
+		t.Errorf("Expected prefix test to have count 4, got %v instead.", ctest)
+	}
+	_, ctes := tr.HasPrefixCount("tes")
+	if ctes != 4 {
+		t.Errorf("Expected prefix tes to have count 4, got %v instead.", ctes)
+	}
+
+	_, ctea := tr.HasPrefixCount("tea")
+	if ctea != 4 {
+		t.Errorf("Expected prefix tea to have count 4, got %v instead.", ctea)
+	}
+	tr.Add("tea")
+	_, ctea = tr.HasPrefixCount("tea")
+	if ctea != 5 {
+		t.Errorf("Expected prefix tea to have count 5, got %v instead.", ctea)
+	}
+
+	// test false cases with shorter and longer than leaf prefixes
+	_, ca := tr.HasPrefixCount("a")
+	if ca != 0 {
+		t.Errorf("Expected prefix a to have count 0, got %v instead.", ca)
+	}
+	_, casdf := tr.HasPrefixCount("asdf")
+	if casdf != 0 {
+		t.Errorf("Expected prefix asdf to have count 0, got %v instead.", casdf)
 	}
 }
 
@@ -340,12 +428,35 @@ func TestTrieDeleteEmpty(t *testing.T) {
 	}
 }
 
+func TestTrieDeleteNothing(t *testing.T) {
+	tr := NewTrie()
+	tr.Add("test")
+	if tr.Delete("") {
+		t.Error("Expected false for tr.Delete('')")
+	}
+
+	_, c1 := tr.HasCount("test")
+	if c1 != 1 {
+		t.Errorf("Expected count for test to be 1. got %v instead", c1)
+	}
+
+	if tr.Delete("tes") {
+		t.Error("Expected false for tr.Delete('tes')")
+	}
+}
+
 func TestTrieDeleteOne(t *testing.T) {
 	tr := NewTrie()
 	tr.Add("test")
 	if !tr.Delete("test") {
 		t.Error("Expected true for tr.Delete('test')")
 	}
+
+	// // delete a branch that has no further branches
+	// tr.Add("teste")
+	// if !tr.Delete("teste") {
+	// 	t.Error("Expected true for tr.Delete('test')")
+	// }
 }
 
 func TestTrieDeleteDouble(t *testing.T) {
@@ -634,7 +745,7 @@ func TestTrieDumpToFileLoadFromFile(t *testing.T) {
 		}
 		n++
 	}
-	tr.DumpToFile("testfiles/TestDumpToFileLoadFromFile")
+	err := tr.DumpToFile("testfiles/TestDumpToFileLoadFromFile")
 
 	loadedTrie, err := LoadFromFile("testfiles/TestDumpToFileLoadFromFile")
 	if err != nil {
@@ -664,6 +775,11 @@ func TestTrieDumpToFileLoadFromFile(t *testing.T) {
 			t.Errorf("Count for member %s differs: orig was %v, restored trie has %v", mi.Value, mi.Count, count)
 		}
 	}
+
+	// test expected failures
+	if tr.DumpToFile("dirdoesnotexist/TestDumpToFileLoadFromFile") == nil {
+		t.Error("expected DumpToFile() to fail with non existent directory.")
+	}
 }
 
 func TestTrieLoadFromFileEmpty(t *testing.T) {
@@ -677,6 +793,58 @@ func TestTrieLoadFromFileEmpty(t *testing.T) {
 	t.Log(loadedTrieMembers.Len())
 	if loadedTrieMembers.Len() > 0 {
 		t.Error("Expected 0 Members from LoadFromFile() with an empty file.")
+	}
+}
+
+func TestTrieLoadFromFileExpectedFailures(t *testing.T) {
+	_, err := LoadFromFile("testfiles/notatriedump")
+	if err == nil {
+		t.Error("Expected LoadFromFile to fail - file testfiles/notatriedump is not a valid Trie dump.")
+	}
+	_, err = LoadFromFile("doesnotexist/doesnotexist")
+	if err == nil {
+		t.Error("Expected LoadFromFile to fail - file testfiles/doesnotexist does notexist.")
+	}
+}
+
+func TestTrieDumpToFileMergeFromFile(t *testing.T) {
+	tr := NewTrie()
+	tr.Add("test")
+	tr.Add("test")
+	tr.Add("tested")
+	tr.Add("tent")
+	tr.DumpToFile("testfiles/TestDumpToFileMergeFromFile")
+
+	tr2 := NewTrie()
+	tr2.Add("tea")
+	tr2.Add("tested")
+
+	err := tr2.MergeFromFile("testfiles/TestDumpToFileMergeFromFile")
+	if err != nil {
+		t.Errorf("Failed to merge Trie from file: %v", err)
+	}
+
+	_, ctest := tr2.HasCount("test")
+	if ctest != 2 {
+		t.Errorf("Expected count for test to be 2. got %v instead.", ctest)
+	}
+	_, ctested := tr2.HasCount("tested")
+	if ctested != 2 {
+		t.Errorf("Expected count for tested to be 2. got %v instead.", ctested)
+	}
+	_, ctea := tr2.HasCount("tea")
+	if ctea != 1 {
+		t.Errorf("Expected count for tea to be 1. got %v instead.", ctea)
+	}
+	_, ctent := tr2.HasCount("tent")
+	if ctent != 1 {
+		t.Errorf("Expected count for tent to be 1. got %v instentd.", ctent)
+	}
+
+	// expected failure
+	err = tr2.MergeFromFile("doesnotexist/doesnotexist")
+	if err == nil {
+		t.Error("Expected MergeFromFile to fail - file testfiles/doesnotexist does notexist.")
 	}
 }
 

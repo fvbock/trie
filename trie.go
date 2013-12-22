@@ -176,8 +176,8 @@ func (t *Trie) DumpToFile(fname string) (err error) {
 	}
 	log.Printf("wrote %d bytes to dumpfile %s\n", bl, fname)
 	w.Flush()
-	t.Root.Lock()
-	t.Root.Unlock()
+	// t.Root.Lock()
+	// t.Root.Unlock()
 	return
 }
 

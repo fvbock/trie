@@ -38,20 +38,26 @@ Add adds an entry to the Branch
 */
 func (b *Branch) add(entry []byte) (addedBranch *Branch) {
 	if b.LeafValue == nil && len(b.Branches) == 0 {
-		b.LeafValue = entry
+		if len(entry) > 0 {
+			b.LeafValue = entry
+		} else {
+			// something came in but we already have branches for it
+			// so the tail was the current branches index but no value
+			// to push. just mark the current idx position as End
+		}
 		b.setEnd(true)
 		addedBranch = b
 		return
 	}
 
-	// something came in but we already have branches for it
-	// so the tail was the current branches index but no value
-	// to push. just mark the current idx position as End
-	if len(b.LeafValue) == 0 && len(entry) == 0 {
-		b.setEnd(true)
-		addedBranch = b
-		return
-	}
+	// // something came in but we already have branches for it
+	// // so the tail was the current branches index but no value
+	// // to push. just mark the current idx position as End
+	// if len(b.LeafValue) == 0 && len(entry) == 0 {
+	// 	b.setEnd(true)
+	// 	addedBranch = b
+	// 	return
+	// }
 
 	// check the overlap between the current LeafValue and the new entry
 	newLeaf := func(LeafValue, newEntry []byte) (leaf []byte) {
@@ -174,7 +180,8 @@ func (b *Branch) prefixMembers(branchPrefix []byte, searchPrefix []byte) (member
 					return
 				}
 			}
-			members = append(members, &MemberInfo{string(append(branchPrefix, b.LeafValue...)), b.Count})
+			members = append(members, b.members(branchPrefix)...)
+			// members = append(members, &MemberInfo{string(append(branchPrefix, b.LeafValue...)), b.Count})
 		}
 	}
 	return
@@ -285,25 +292,34 @@ func (b *Branch) getBranch(entry []byte) (be *Branch) {
 /*
  */
 func (b *Branch) hasPrefix(prefix []byte) bool {
-	exists, _ := b.hasPrefixCount(prefix)
+	exists, _ := b.hasPrefixBranch(prefix)
 	return exists
 }
 
 func (b *Branch) hasPrefixCount(prefix []byte) (exists bool, count int64) {
+	exists, br := b.hasPrefixBranch(prefix)
+	if exists {
+		count = br.sumCount()
+	}
+	return
+}
+
+func (b *Branch) hasPrefixBranch(prefix []byte) (exists bool, branch *Branch) {
 	leafLen := len(b.LeafValue)
 	prefixLen := len(prefix)
+	exists = false
 
 	if leafLen > 0 {
 		if prefixLen <= leafLen {
 			for i, pb := range prefix {
 				if pb != b.LeafValue[i] {
-					return false, b.Count
+					return
 				}
 			}
 		} else {
 			for i, lb := range b.LeafValue {
 				if prefix[i] != lb {
-					return false, b.Count
+					return
 				}
 			}
 		}
@@ -311,13 +327,26 @@ func (b *Branch) hasPrefixCount(prefix []byte) (exists bool, count int64) {
 
 	if prefixLen > leafLen {
 		if br, present := b.Branches[prefix[leafLen]]; present {
-			return br.hasPrefixCount(prefix[leafLen+1:])
+			return br.hasPrefixBranch(prefix[leafLen+1:])
 		} else {
-			return false, b.Count
+			return
 		}
 	}
 
-	return true, b.Count
+	return true, b
+}
+
+func (b *Branch) sumCount() (count int64) {
+	// leaf itself matches
+	if b.End {
+		// fmt.Println("***", string(b.LeafValue), b.Count)
+		count += b.Count
+	}
+	for _, br := range b.Branches {
+		// fmt.Println(string(k), br.Count)
+		count += br.sumCount()
+	}
+	return
 }
 
 /*
@@ -349,9 +378,9 @@ func (b *Branch) Dump(depth int) (out string) {
 
 /*
  */
-func (b *Branch) hasBranches() bool {
-	return len(b.Branches) == 0
-}
+// func (b *Branch) hasBranches() bool {
+// 	return len(b.Branches) == 0
+// }
 
 /*
  */
@@ -364,23 +393,23 @@ func (b *Branch) hasBranch(idx byte) bool {
 
 /*
  */
-func (b *Branch) matchesLeaf(entry []byte) bool {
-	leafLen := len(b.LeafValue)
-	entryLen := len(entry)
+// func (b *Branch) matchesLeaf(entry []byte) bool {
+// 	leafLen := len(b.LeafValue)
+// 	entryLen := len(entry)
 
-	if leafLen == 0 && entryLen == 0 {
-		return true
-	}
+// 	if leafLen == 0 && entryLen == 0 {
+// 		return true
+// 	}
 
-	if leafLen == entryLen {
-		for i, lb := range b.LeafValue {
-			if entry[i] != lb {
-				return false
-			}
-		}
-	}
-	return true
-}
+// 	if leafLen == entryLen {
+// 		for i, lb := range b.LeafValue {
+// 			if entry[i] != lb {
+// 				return false
+// 			}
+// 		}
+// 	}
+// 	return true
+// }
 
 /*
  */
@@ -421,5 +450,5 @@ func (b *Branch) String() string {
 }
 
 func (b *Branch) PrintDump() {
-	fmt.Printf("\n\n%s\n\n", b.Dump(0))
+	fmt.Printf("\n%s\n\n", b)
 }
