@@ -50,15 +50,6 @@ func (b *Branch) add(entry []byte) (addedBranch *Branch) {
 		return
 	}
 
-	// // something came in but we already have branches for it
-	// // so the tail was the current branches index but no value
-	// // to push. just mark the current idx position as End
-	// if len(b.LeafValue) == 0 && len(entry) == 0 {
-	// 	b.setEnd(true)
-	// 	addedBranch = b
-	// 	return
-	// }
-
 	// check the overlap between the current LeafValue and the new entry
 	newLeaf := func(LeafValue, newEntry []byte) (leaf []byte) {
 		for li, b := range LeafValue {
@@ -339,11 +330,9 @@ func (b *Branch) hasPrefixBranch(prefix []byte) (exists bool, branch *Branch) {
 func (b *Branch) sumCount() (count int64) {
 	// leaf itself matches
 	if b.End {
-		// fmt.Println("***", string(b.LeafValue), b.Count)
 		count += b.Count
 	}
 	for _, br := range b.Branches {
-		// fmt.Println(string(k), br.Count)
 		count += br.sumCount()
 	}
 	return
