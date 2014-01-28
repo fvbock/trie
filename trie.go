@@ -169,7 +169,7 @@ func (t *Trie) DumpToFile(fname string) (err error) {
 	defer f.Close()
 
 	w := bufio.NewWriter(f)
-	_, err := w.Write(buf.Bytes())
+	_, err = w.Write(buf.Bytes())
 	if err != nil {
 		err = errors.New(fmt.Sprintf("Error writing to dump file: %v", err))
 		return
