@@ -269,13 +269,6 @@ checkMembers1:
 		t.Errorf("Expected PrefixMembers('test') to have `%s` as member", s)
 	}
 
-	// if tr.PrefixMembers("test")[0].Value != "test" {
-	// 	t.Error("Expected PrefixMembers('test') to have `test` as first member")
-	// }
-	// if tr.PrefixMembers("test")[1].Value != "testing" {
-	// 	t.Error("Expected PrefixMembers('test') to have `testing` as second member")
-	// }
-
 	if len(tr.PrefixMembers("te")) != 3 {
 		t.Error("Expected PrefixMembers('te') to have length 3")
 	}
