@@ -466,33 +466,43 @@ func TestTrieHasPrefixMultibyteWithSharedSubCharBytes(t *testing.T) {
 	if len(tr.PrefixMembers("フ")) != 2 {
 		t.Error("Expected PrefixMembers('フ') to have length 2")
 	}
-	if tr.PrefixMembers("フ")[0].Value != "フードスポンサー" {
-		t.Error("Expected PrefixMembers('フ') to have `フードスポンサー` as first member")
-	}
-	if tr.PrefixMembers("フ")[1].Value != "フードラボ" {
-		t.Error("Expected PrefixMembers('フ') to have `フードラボ` as second member")
+	var expectedMembers = []string{"フードスポンサー", "フードラボ"}
+checkMembers1:
+	for _, s := range expectedMembers {
+		for _, m := range tr.PrefixMembers("フ") {
+			if s == m.Value {
+				continue checkMembers1
+			}
+		}
+		t.Errorf("Expected PrefixMembers('フ') to have `%s` as member", s)
 	}
 
 	// t.Log(tr.PrefixMembers("フー"))
 	if len(tr.PrefixMembers("フー")) != 2 {
 		t.Error("Expected PrefixMembers('フー') to have length 2")
 	}
-	if tr.PrefixMembers("フー")[0].Value != "フードスポンサー" {
-		t.Error("Expected PrefixMembers('フー') to have `フードスポンサー` as first member")
-	}
-	if tr.PrefixMembers("フー")[1].Value != "フードラボ" {
-		t.Error("Expected PrefixMembers('フー') to have `フードラボ` as second member")
+checkMembers2:
+	for _, s := range expectedMembers {
+		for _, m := range tr.PrefixMembers("フー") {
+			if s == m.Value {
+				continue checkMembers2
+			}
+		}
+		t.Errorf("Expected PrefixMembers('フー') to have `%s` as member", s)
 	}
 
 	// t.Log(tr.PrefixMembers("フード"))
 	if len(tr.PrefixMembers("フード")) != 2 {
 		t.Error("Expected PrefixMembers('フード') to have length 2")
 	}
-	if tr.PrefixMembers("フード")[0].Value != "フードスポンサー" {
-		t.Error("Expected PrefixMembers('フード') to have `フードスポンサー` as first member")
-	}
-	if tr.PrefixMembers("フード")[1].Value != "フードラボ" {
-		t.Error("Expected PrefixMembers('フード') to have `フードラボ` as second member")
+checkMembers3:
+	for _, s := range expectedMembers {
+		for _, m := range tr.PrefixMembers("フード") {
+			if s == m.Value {
+				continue checkMembers3
+			}
+		}
+		t.Errorf("Expected PrefixMembers('フード') to have `%s` as member", s)
 	}
 
 	// t.Log(tr.PrefixMembers("フードス"))
@@ -523,11 +533,14 @@ func TestTrieHasPrefixMultibyteWithSharedSubCharBytes(t *testing.T) {
 	if len(tr.PrefixMembers("フー")) != 2 {
 		t.Error("Expected PrefixMembers('フー') to have length 2")
 	}
-	if tr.PrefixMembers("フー")[0].Value != "フードスポンサー" {
-		t.Error("Expected PrefixMembers('フー') to have `フードスポンサー` as first member")
-	}
-	if tr.PrefixMembers("フー")[1].Value != "フードラボ" {
-		t.Error("Expected PrefixMembers('フー') to have `フードラボ` as second member")
+checkMembers4:
+	for _, s := range expectedMembers {
+		for _, m := range tr.PrefixMembers("フー") {
+			if s == m.Value {
+				continue checkMembers4
+			}
+		}
+		t.Errorf("Expected PrefixMembers('フー') to have `%s` as member", s)
 	}
 }
 
@@ -986,19 +999,6 @@ func TestTrieDumpToFileMergeFromFile(t *testing.T) {
 // some simple benchmarks
 
 func BenchmarkTrieBenchAdd(b *testing.B) {
-	// randstr := make([]string, 100)
-	// i := 0
-	// for i < 10000 {
-	// 	rstr := []byte{}
-	// 	n := 0
-	// 	for n < 100 {
-	// 		rstr = append(rstr, byte(rand.Intn(255)))
-	// 		n++
-	// 	}
-	// 	randstr = append(randstr, string(rstr))
-	// 	i++
-	// }
-
 	tr := NewTrie()
 	for x := 0; x < b.N; x++ {
 		tr.Add(randstrings[x%500000])
