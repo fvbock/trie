@@ -137,46 +137,54 @@ func (b *Branch) members(branchPrefix []byte) (members []*MemberInfo) {
 prefixMembers returns a slice of all Members of the Branch matching the given prefix. The values returned are prepended with `branchPrefix`
 */
 func (b *Branch) prefixMembers(branchPrefix []byte, searchPrefix []byte) (members []*MemberInfo) {
-	leafLen := len(b.LeafValue)
-	searchPrefixLen := len(searchPrefix)
-
-	// if the searchPrefix is empty we want all members
-	if searchPrefixLen == 0 {
-		members = append(members, b.members(branchPrefix)...)
-		return
-	}
-
-	// if the searchPrefix is shorter than the leaf we will add the LeafValue
-	// if it is an End and a the searchPrefix matches
-	// if searchPrefixLen < leafLen {
-	if searchPrefixLen > leafLen {
-		for idx, br := range b.Branches {
-			// does it match the next byte?
-			if idx == searchPrefix[leafLen] {
-				newSearchPrefix := searchPrefix[leafLen+1:]
-				members = append(members, br.prefixMembers(append(append(branchPrefix, b.LeafValue...), idx), newSearchPrefix)...)
-			}
-		}
-	} else if searchPrefixLen == leafLen {
-		for i, sb := range searchPrefix {
-			if sb != b.LeafValue[i] {
-				return
-			}
-		}
-		members = append(members, b.members(branchPrefix)...)
-	} else {
-		if b.End {
-			for i, sb := range searchPrefix {
-				if sb != b.LeafValue[i] {
-					return
-				}
-			}
-			members = append(members, b.members(branchPrefix)...)
-			// members = append(members, &MemberInfo{string(append(branchPrefix, b.LeafValue...)), b.Count})
-		}
+	exists, br, matchedPrefix := b.hasPrefixBranch(searchPrefix)
+	if exists {
+		members = br.members(matchedPrefix)
 	}
 	return
 }
+
+// func (b *Branch) prefixMembers(branchPrefix []byte, searchPrefix []byte) (members []*MemberInfo) {
+// 	leafLen := len(b.LeafValue)
+// 	searchPrefixLen := len(searchPrefix)
+
+// 	// if the searchPrefix is empty we want all members
+// 	if searchPrefixLen == 0 {
+// 		members = append(members, b.members(branchPrefix)...)
+// 		return
+// 	}
+
+// 	// if the searchPrefix is shorter than the leaf we will add the LeafValue
+// 	// if it is an End and a the searchPrefix matches
+// 	// if searchPrefixLen < leafLen {
+// 	if searchPrefixLen > leafLen {
+// 		for idx, br := range b.Branches {
+// 			// does it match the next byte?
+// 			if idx == searchPrefix[leafLen] {
+// 				newSearchPrefix := searchPrefix[leafLen+1:]
+// 				members = append(members, br.prefixMembers(append(append(branchPrefix, b.LeafValue...), idx), newSearchPrefix)...)
+// 			}
+// 		}
+// 	} else if searchPrefixLen == leafLen {
+// 		for i, sb := range searchPrefix {
+// 			if sb != b.LeafValue[i] {
+// 				return
+// 			}
+// 		}
+// 		members = append(members, b.members(branchPrefix)...)
+// 	} else {
+// 		if b.End {
+// 			for i, sb := range searchPrefix {
+// 				if sb != b.LeafValue[i] {
+// 					return
+// 				}
+// 			}
+// 			members = append(members, b.members(branchPrefix)...)
+// 			// members = append(members, &MemberInfo{string(append(branchPrefix, b.LeafValue...)), b.Count})
+// 		}
+// 	}
+// 	return
+// }
 
 /*
  */
@@ -283,22 +291,23 @@ func (b *Branch) getBranch(entry []byte) (be *Branch) {
 /*
  */
 func (b *Branch) hasPrefix(prefix []byte) bool {
-	exists, _ := b.hasPrefixBranch(prefix)
+	exists, _, _ := b.hasPrefixBranch(prefix)
 	return exists
 }
 
 func (b *Branch) hasPrefixCount(prefix []byte) (exists bool, count int64) {
-	exists, br := b.hasPrefixBranch(prefix)
+	exists, br, _ := b.hasPrefixBranch(prefix)
 	if exists {
 		count = br.sumCount()
 	}
 	return
 }
 
-func (b *Branch) hasPrefixBranch(prefix []byte) (exists bool, branch *Branch) {
+func (b *Branch) hasPrefixBranch(prefix []byte) (exists bool, branch *Branch, matchedPrefix []byte) {
 	leafLen := len(b.LeafValue)
 	prefixLen := len(prefix)
 	exists = false
+	var pref []byte
 
 	if leafLen > 0 {
 		if prefixLen <= leafLen {
@@ -313,18 +322,21 @@ func (b *Branch) hasPrefixBranch(prefix []byte) (exists bool, branch *Branch) {
 					return
 				}
 			}
+			matchedPrefix = append(matchedPrefix, prefix[:leafLen]...)
 		}
 	}
 
 	if prefixLen > leafLen {
 		if br, present := b.Branches[prefix[leafLen]]; present {
-			return br.hasPrefixBranch(prefix[leafLen+1:])
+			matchedPrefix = append(matchedPrefix, prefix[leafLen])
+			exists, branch, pref = br.hasPrefixBranch(prefix[leafLen+1:])
+			matchedPrefix = append(matchedPrefix, pref...)
+			return
 		} else {
 			return
 		}
 	}
-
-	return true, b
+	return true, b, matchedPrefix
 }
 
 func (b *Branch) sumCount() (count int64) {
@@ -343,9 +355,9 @@ func (b *Branch) sumCount() (count int64) {
 func (b *Branch) Dump(depth int) (out string) {
 	if len(b.LeafValue) > 0 {
 		if b.End {
-			out += fmt.Sprintf("%s V:%v (%v)\n", strings.Repeat(PADDING_CHAR, depth), string(b.LeafValue), b.Count)
+			out += fmt.Sprintf("%s V:%v %v (%v)\n", strings.Repeat(PADDING_CHAR, depth), string(b.LeafValue), b.LeafValue, b.Count)
 		} else {
-			out += fmt.Sprintf("%s V:%v (%v)\n", strings.Repeat(PADDING_CHAR, depth), string(b.LeafValue), "-")
+			out += fmt.Sprintf("%s V:%v %v (%v)\n", strings.Repeat(PADDING_CHAR, depth), string(b.LeafValue), b.LeafValue, "-")
 		}
 	}
 
@@ -355,9 +367,9 @@ func (b *Branch) Dump(depth int) (out string) {
 
 	for idx, branch := range b.Branches {
 		if branch.End && len(branch.LeafValue) == 0 {
-			out += fmt.Sprintf("%s I:%v (%v)\n", strings.Repeat(PADDING_CHAR, depth+len(b.LeafValue)), string(idx), branch.Count)
+			out += fmt.Sprintf("%s I:%v %v (%v)\n", strings.Repeat(PADDING_CHAR, depth+len(b.LeafValue)), string(idx), idx, branch.Count)
 		} else {
-			out += fmt.Sprintf("%s I:%v (%v)\n", strings.Repeat(PADDING_CHAR, depth+len(b.LeafValue)), string(idx), "-")
+			out += fmt.Sprintf("%s I:%v %v (%v)\n", strings.Repeat(PADDING_CHAR, depth+len(b.LeafValue)), string(idx), idx, "-")
 		}
 		out += branch.Dump(depth + len(b.LeafValue) + 1)
 	}

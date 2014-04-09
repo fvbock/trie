@@ -1,16 +1,44 @@
 package trie
 
 import (
-	// "fmt"
-	"github.com/fvbock/uds-go/set"
+	"fmt"
 	"math/rand"
 	"runtime"
 	"sync"
 	"testing"
+	"time"
+
+	"github.com/fvbock/uds-go/set"
+)
+
+var (
+	tr1M        *Trie
+	randstrings []string
 )
 
 func init() {
 	runtime.GOMAXPROCS(1)
+
+	tr1M = NewTrie()
+	randstrings = make([]string, 1000000)
+	i := 0
+	for i < 1000000 {
+		rstr := []byte{}
+		n := 0
+		for n < 50 {
+			rstr = append(rstr, byte(rand.Intn(255)))
+			n++
+		}
+		randstrings[i] = string(rstr)
+		i++
+	}
+	fmt.Println(len(randstrings))
+	startTime := time.Now()
+	for x := 0; x < 1000000; x++ {
+		tr1M.Add(randstrings[x%500000])
+	}
+	fmt.Printf("Adding 1M entries took: %v\n", time.Since(startTime))
+	fmt.Printf("Having %v distinct entries.\n", len(tr1M.Members()))
 }
 
 func TestTrieAddSingle(t *testing.T) {
@@ -229,9 +257,26 @@ func TestTriePrefixMembers(t *testing.T) {
 	if len(tr.PrefixMembers("test")) != 2 {
 		t.Error("Expected PrefixMembers('test') to have length 2")
 	}
+	if tr.PrefixMembers("test")[0].Value != "test" {
+		t.Error("Expected PrefixMembers('test') to have `test` as first member")
+	}
+	if tr.PrefixMembers("test")[1].Value != "testing" {
+		t.Error("Expected PrefixMembers('test') to have `testing` as second member")
+	}
+
 	if len(tr.PrefixMembers("te")) != 3 {
 		t.Error("Expected PrefixMembers('te') to have length 3")
 	}
+	if tr.PrefixMembers("te")[0].Value != "teased" {
+		t.Error("Expected PrefixMembers('te') to have `teased` as first member")
+	}
+	if tr.PrefixMembers("te")[1].Value != "test" {
+		t.Error("Expected PrefixMembers('te') to have `test` as second member")
+	}
+	if tr.PrefixMembers("te")[2].Value != "testing" {
+		t.Error("Expected PrefixMembers('te') to have `testing` as third member")
+	}
+
 	if len(tr.PrefixMembers("a")) != 0 {
 		t.Error("Expected PrefixMembers('a') to have length 0")
 	}
@@ -393,6 +438,96 @@ func TestTrieHasPrefixManyMultibyte(t *testing.T) {
 	}
 	if !tr.HasPrefix("日") {
 		t.Error("Expected prefix 日")
+	}
+}
+
+/*
+These are a bunch of tests that i basically added when trying to reproduce
+a bug that dropped a byte from prefix members in certain cases. (only happened
+with multibyte character prefixes/terms)
+strictly speaking these tests could go, but i leave them in for now.
+*/
+func TestTrieHasPrefixMultibyteWithSharedSubCharBytes(t *testing.T) {
+	tr := NewTrie()
+	tr.Add("フードスポンサー")
+	tr.Add("フードラボ")
+
+	if !tr.HasPrefix("フ") {
+		t.Error("Expected prefix フ")
+	}
+	if !tr.HasPrefix("フー") {
+		t.Error("Expected prefix フー")
+	}
+	if !tr.HasPrefix("フード") {
+		t.Error("Expected prefix フード")
+	}
+
+	// t.Log(tr.PrefixMembers("フ"))
+	if len(tr.PrefixMembers("フ")) != 2 {
+		t.Error("Expected PrefixMembers('フ') to have length 2")
+	}
+	if tr.PrefixMembers("フ")[0].Value != "フードスポンサー" {
+		t.Error("Expected PrefixMembers('フ') to have `フードスポンサー` as first member")
+	}
+	if tr.PrefixMembers("フ")[1].Value != "フードラボ" {
+		t.Error("Expected PrefixMembers('フ') to have `フードラボ` as second member")
+	}
+
+	// t.Log(tr.PrefixMembers("フー"))
+	if len(tr.PrefixMembers("フー")) != 2 {
+		t.Error("Expected PrefixMembers('フー') to have length 2")
+	}
+	if tr.PrefixMembers("フー")[0].Value != "フードスポンサー" {
+		t.Error("Expected PrefixMembers('フー') to have `フードスポンサー` as first member")
+	}
+	if tr.PrefixMembers("フー")[1].Value != "フードラボ" {
+		t.Error("Expected PrefixMembers('フー') to have `フードラボ` as second member")
+	}
+
+	// t.Log(tr.PrefixMembers("フード"))
+	if len(tr.PrefixMembers("フード")) != 2 {
+		t.Error("Expected PrefixMembers('フード') to have length 2")
+	}
+	if tr.PrefixMembers("フード")[0].Value != "フードスポンサー" {
+		t.Error("Expected PrefixMembers('フード') to have `フードスポンサー` as first member")
+	}
+	if tr.PrefixMembers("フード")[1].Value != "フードラボ" {
+		t.Error("Expected PrefixMembers('フード') to have `フードラボ` as second member")
+	}
+
+	// t.Log(tr.PrefixMembers("フードス"))
+	if len(tr.PrefixMembers("フードス")) != 1 {
+		t.Error("Expected PrefixMembers('フードス') to have length 1")
+	}
+	if tr.PrefixMembers("フードス")[0].Value != "フードスポンサー" {
+		t.Error("Expected PrefixMembers('フードス') to have `フードスポンサー` as first and only member")
+	}
+
+	tr.Add("ファ")
+	tr.Add("フぃ")
+	tr.Add("フぇ")
+	tr.Add("フォーム")
+	tr.Add("フリガナ")
+
+	if !tr.HasPrefix("フ") {
+		t.Error("Expected prefix フ")
+	}
+	if !tr.HasPrefix("フー") {
+		t.Error("Expected prefix フー")
+	}
+	if !tr.HasPrefix("フード") {
+		t.Error("Expected prefix フード")
+	}
+
+	// t.Log(tr.PrefixMembers("フー"))
+	if len(tr.PrefixMembers("フー")) != 2 {
+		t.Error("Expected PrefixMembers('フー') to have length 2")
+	}
+	if tr.PrefixMembers("フー")[0].Value != "フードスポンサー" {
+		t.Error("Expected PrefixMembers('フー') to have `フードスポンサー` as first member")
+	}
+	if tr.PrefixMembers("フー")[1].Value != "フードラボ" {
+		t.Error("Expected PrefixMembers('フー') to have `フードラボ` as second member")
 	}
 }
 
@@ -851,66 +986,85 @@ func TestTrieDumpToFileMergeFromFile(t *testing.T) {
 // some simple benchmarks
 
 func BenchmarkTrieBenchAdd(b *testing.B) {
-	randstr := make([][]byte, 100)
-	i := 0
-	for i < 100 {
-		randstr[i] = []byte{}
-		n := 0
-		for n < 100 {
-			randstr[i] = append(randstr[i], byte(rand.Intn(255)))
-			n++
-		}
-		i++
-	}
+	// randstr := make([]string, 100)
+	// i := 0
+	// for i < 10000 {
+	// 	rstr := []byte{}
+	// 	n := 0
+	// 	for n < 100 {
+	// 		rstr = append(rstr, byte(rand.Intn(255)))
+	// 		n++
+	// 	}
+	// 	randstr = append(randstr, string(rstr))
+	// 	i++
+	// }
 
 	tr := NewTrie()
 	for x := 0; x < b.N; x++ {
-		tr.Add(string(randstr[x%100]))
+		tr.Add(randstrings[x%500000])
 	}
 }
 
 func BenchmarkTrieBenchHasPrefix(b *testing.B) {
 	tr := NewTrie()
-	randstr := make([][]byte, 10000)
+	b.StopTimer()
+	randstr := make([]string, 100)
 	i := 0
-	for i < 10000 {
-		randstr[i] = []byte{}
+	for i < 100000 {
+		rstr := []byte{}
 		n := 0
 		for n < 100 {
-			randstr[i] = append(randstr[i], byte(rand.Intn(255)))
+			rstr = append(rstr, byte(rand.Intn(255)))
 			n++
 		}
+		randstr = append(randstr, string(rstr))
 		i++
 	}
 
-	for x := 0; x < 100000; x++ {
-		tr.Add(string(randstr[x%10000]))
+	for x := 0; x < 1000000; x++ {
+		tr.Add(randstr[x%10000])
 	}
-
+	// fmt.Printf("Having %v distinct entries.\n", len(tr.Members()))
+	b.StartTimer()
 	for x := 0; x < b.N; x++ {
-		tr.HasPrefix(string(randstr[x%10000]))
+		tr.HasPrefix(randstr[x%100000])
 	}
 }
 
 func BenchmarkTrieBenchHas(b *testing.B) {
 	tr := NewTrie()
-	randstr := make([][]byte, 10000)
+	b.StopTimer()
+	randstr := make([]string, 100)
 	i := 0
-	for i < 10000 {
-		randstr[i] = []byte{}
+	for i < 100000 {
+		rstr := []byte{}
 		n := 0
 		for n < 100 {
-			randstr[i] = append(randstr[i], byte(rand.Intn(255)))
+			rstr = append(rstr, byte(rand.Intn(255)))
 			n++
 		}
+		randstr = append(randstr, string(rstr))
 		i++
 	}
 
-	for y := 0; y < 100000; y++ {
-		tr.Add(string(randstr[y%10000]))
+	for x := 0; x < 1000000; x++ {
+		tr.Add(randstr[x%10000])
 	}
-
+	// fmt.Printf("Having %v distinct entries.\n", len(tr.Members()))
+	b.StartTimer()
 	for x := 0; x < b.N; x++ {
-		tr.Has(string(randstr[x%10000]))
+		tr.Has(randstr[x%100000])
+	}
+}
+
+func BenchmarkTrie1MBenchHasPrefix(b *testing.B) {
+	for x := 0; x < b.N; x++ {
+		tr1M.HasPrefix(randstrings[x%1000000])
+	}
+}
+
+func BenchmarkTrie1MBenchHas(b *testing.B) {
+	for x := 0; x < b.N; x++ {
+		tr1M.Has(randstrings[x%1000000])
 	}
 }
