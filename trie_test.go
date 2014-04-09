@@ -254,36 +254,49 @@ func TestTriePrefixMembers(t *testing.T) {
 	tr.Add("test")
 	tr.Add("test")
 	tr.Add("testing")
+
 	if len(tr.PrefixMembers("test")) != 2 {
 		t.Error("Expected PrefixMembers('test') to have length 2")
 	}
-	if tr.PrefixMembers("test")[0].Value != "test" {
-		t.Error("Expected PrefixMembers('test') to have `test` as first member")
+	var expectedMembers1 = []string{"test", "testing"}
+checkMembers1:
+	for _, s := range expectedMembers1 {
+		for _, m := range tr.PrefixMembers("test") {
+			if s == m.Value {
+				continue checkMembers1
+			}
+		}
+		t.Errorf("Expected PrefixMembers('test') to have `%s` as member", s)
 	}
-	if tr.PrefixMembers("test")[1].Value != "testing" {
-		t.Error("Expected PrefixMembers('test') to have `testing` as second member")
-	}
+
+	// if tr.PrefixMembers("test")[0].Value != "test" {
+	// 	t.Error("Expected PrefixMembers('test') to have `test` as first member")
+	// }
+	// if tr.PrefixMembers("test")[1].Value != "testing" {
+	// 	t.Error("Expected PrefixMembers('test') to have `testing` as second member")
+	// }
 
 	if len(tr.PrefixMembers("te")) != 3 {
 		t.Error("Expected PrefixMembers('te') to have length 3")
 	}
-	if tr.PrefixMembers("te")[0].Value != "teased" {
-		t.Error("Expected PrefixMembers('te') to have `teased` as first member")
-	}
-	if tr.PrefixMembers("te")[1].Value != "test" {
-		t.Error("Expected PrefixMembers('te') to have `test` as second member")
-	}
-	if tr.PrefixMembers("te")[2].Value != "testing" {
-		t.Error("Expected PrefixMembers('te') to have `testing` as third member")
+	var expectedMembers2 = []string{"test", "testing", "teased"}
+checkMembers2:
+	for _, s := range expectedMembers2 {
+		for _, m := range tr.PrefixMembers("te") {
+			if s == m.Value {
+				continue checkMembers2
+			}
+		}
+		t.Errorf("Expected PrefixMembers('te') to have `%s` as member", s)
 	}
 
 	if len(tr.PrefixMembers("a")) != 0 {
 		t.Error("Expected PrefixMembers('a') to have length 0")
 	}
-	tr.PrintDump()
 	if len(tr.PrefixMembers("ta")) != 0 {
 		t.Error("Expected PrefixMembers('ta') to have length 0")
 	}
+
 	if len(tr.PrefixMembers("")) != 3 {
 		t.Error("Expected PrefixMembers('') to have length 3")
 	}
