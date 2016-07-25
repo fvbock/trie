@@ -936,6 +936,71 @@ func TestTrieDumpToFileLoadFromFile(t *testing.T) {
 	}
 }
 
+
+func TestTrieEncodeB64DecodeB64(t *testing.T) {
+	tr := NewTrie()
+	var prefix = "prefix"
+	var words []string
+	var str []byte
+	var insert string
+	var n = 0
+	for n < 100 {
+		i := 0
+		str = []byte{}
+		for i < 10 {
+			rn := 0
+			for rn < 97 {
+				rn = rand.Intn(123)
+			}
+			str = append(str, byte(rn))
+			i++
+		}
+		if rand.Intn(2) == 1 {
+			insert = prefix + string(str)
+		} else {
+			insert = string(str)
+		}
+		words = append(words, insert)
+		tr.Add(insert)
+		if rand.Intn(2) == 1 {
+			tr.Add(insert)
+		}
+		n++
+	}
+	encoded, err := tr.ToBase64String()
+
+	loadedTrie, err := FromBase64String(encoded)
+	if err != nil {
+		t.Errorf("Failed to load Trie from encoded string")
+	}
+	for _, w := range words {
+		// t.Logf("Checking for %s", w)
+		if !loadedTrie.Has(w) {
+			t.Errorf("Expected to find %s", w)
+		}
+	}
+
+	trMembers := set.NewStringSet(tr.MembersList()...)
+	loadedTrieMembers := set.NewStringSet(loadedTrie.MembersList()...)
+
+	t.Log("trMembers.IsEqual(loadedTrieMembers):", trMembers.IsEqual(loadedTrieMembers))
+
+	diff := trMembers.Difference(loadedTrieMembers)
+	if diff.Len() > 0 {
+		t.Error("Dump() of the original and the LoadFromFile() version of the Trie are different.")
+	}
+
+	// check counts
+	for _, mi := range tr.Members() {
+		_, count := loadedTrie.HasCount(mi.Value)
+		if count != mi.Count {
+			t.Errorf("Count for member %s differs: orig was %v, restored trie has %v", mi.Value, mi.Count, count)
+		}
+	}
+
+}
+
+
 func TestTrieLoadFromFileEmpty(t *testing.T) {
 	loadedTrie, err := LoadFromFile("testfiles/empty")
 	if err != nil {

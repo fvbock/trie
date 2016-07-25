@@ -3,6 +3,7 @@ package trie
 import (
 	"bufio"
 	"bytes"
+	"encoding/base64"
 	"encoding/gob"
 	"errors"
 	"fmt"
@@ -140,6 +141,60 @@ func (t *Trie) Dump() string {
  */
 func (t *Trie) PrintDump() {
 	t.Root.PrintDump()
+}
+
+/*
+ToBase64String returns a string representing the Base64 encoded Trie
+*/
+func (t *Trie) ToBase64String() (encoded string, err error) {
+
+	t.Root.Lock()
+	entries := t.Members()
+	t.Root.Unlock()
+
+	encoded = ""
+
+	buf := new(bytes.Buffer)
+	enc := gob.NewEncoder(buf)
+	if err = enc.Encode(entries); err != nil {
+		err = errors.New(fmt.Sprintf("Could encode Trie entries for base 64 encoding: %v", err))
+		return
+	}
+
+	encoded = base64.StdEncoding.EncodeToString(buf.Bytes())
+
+	return
+}
+
+/*
+FromBase64String returns a new Trie from a Base64 encoded version
+*/
+func FromBase64String(encoded string) (tr *Trie, err error) {
+
+	tr = NewTrie()
+	decoded, err := base64.StdEncoding.DecodeString(encoded)
+
+	entries := new([]*MemberInfo)
+
+	buf := bytes.NewReader(decoded)
+	dec := gob.NewDecoder(buf)
+	if err = dec.Decode(entries); err != nil {
+		if err == io.EOF && entries == nil {
+			log.Println("Nothing to decode. Seems the file is empty.")
+			err = nil
+		} else {
+			err = errors.New(fmt.Sprintf("Decoding error: %v", err))
+			return
+		}
+	}
+
+	for _, mi := range *entries {
+		b := tr.Add(mi.Value)
+		b.Count = mi.Count
+	}
+
+	return
+
 }
 
 /*
