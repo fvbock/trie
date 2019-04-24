@@ -2,7 +2,6 @@ package trie
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/gob"
 	"errors"
 	"fmt"
@@ -143,6 +142,26 @@ func (t *Trie) PrintDump() {
 }
 
 /*
+DumpToWriter dumps all values into a slice of strings and writes that to a writer
+using encoding/gob.
+
+The Trie itself can currently not be encoded directly because gob does not
+directly support structs with a sync.Mutex on them.
+*/
+func (t *Trie) DumpToWriter(writer io.Writer) (err error) {
+	t.Root.Lock()
+	entries := t.Members()
+	t.Root.Unlock()
+
+	enc := gob.NewEncoder(writer)
+	if err = enc.Encode(entries); err != nil {
+		err = fmt.Errorf("Could encode Trie entries for dump file: %v", err)
+		return
+	}
+	return
+}
+
+/*
 DumpToFile dumps all values into a slice of strings and writes that to a file
 using encoding/gob.
 
@@ -150,31 +169,18 @@ The Trie itself can currently not be encoded directly because gob does not
 directly support structs with a sync.Mutex on them.
 */
 func (t *Trie) DumpToFile(fname string) (err error) {
-	t.Root.Lock()
-	entries := t.Members()
-	t.Root.Unlock()
-
-	buf := new(bytes.Buffer)
-	enc := gob.NewEncoder(buf)
-	if err = enc.Encode(entries); err != nil {
-		err = errors.New(fmt.Sprintf("Could encode Trie entries for dump file: %v", err))
-		return
-	}
-
 	f, err := os.Create(fname)
 	if err != nil {
-		err = errors.New(fmt.Sprintf("Could not save dump file: %v", err))
+		err = fmt.Errorf("Could not save dump file: %v", err)
 		return
 	}
 	defer f.Close()
 
 	w := bufio.NewWriter(f)
-	_, err = w.Write(buf.Bytes())
-	if err != nil {
-		err = errors.New(fmt.Sprintf("Error writing to dump file: %v", err))
+	if err = t.DumpToWriter(f); err != nil {
 		return
 	}
-	// log.Printf("wrote %d bytes to dumpfile %s\n", bl, fname)
+
 	w.Flush()
 	return
 }
