@@ -7,9 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
-	"time"
 )
 
 type Trie struct {
@@ -174,7 +172,6 @@ func (t *Trie) DumpToFile(fname string) (err error) {
 		err = errors.New(fmt.Sprintf("Error writing to dump file: %v", err))
 		return
 	}
-	// log.Printf("wrote %d bytes to dumpfile %s\n", bl, fname)
 	w.Flush()
 	return
 }
@@ -188,8 +185,6 @@ func (t *Trie) MergeFromFile(fname string) (err error) {
 	if err != nil {
 		return
 	}
-	log.Printf("Got %v entries\n", len(entries))
-	startTime := time.Now()
 	for _, mi := range entries {
 		b := t.GetBranch(mi.Value)
 		if b != nil {
@@ -203,7 +198,6 @@ func (t *Trie) MergeFromFile(fname string) (err error) {
 			b.Unlock()
 		}
 	}
-	log.Printf("merging words to index took: %v\n", time.Since(startTime))
 	return
 }
 
@@ -217,19 +211,15 @@ func LoadFromFile(fname string) (tr *Trie, err error) {
 	if err != nil {
 		return
 	}
-	log.Printf("Got %v entries\n", len(entries))
-	startTime := time.Now()
 	for _, mi := range entries {
 		b := tr.Add(mi.Value)
 		b.Count = mi.Count
 	}
-	log.Printf("adding words to index took: %v\n", time.Since(startTime))
 
 	return
 }
 
 func loadTrieFile(fname string) (entries []*MemberInfo, err error) {
-	log.Println("Load trie from", fname)
 	f, err := os.Open(fname)
 	if err != nil {
 		err = errors.New(fmt.Sprintf("Could not open Trie file: %v", err))
@@ -240,7 +230,6 @@ func loadTrieFile(fname string) (entries []*MemberInfo, err error) {
 		dec := gob.NewDecoder(buf)
 		if err = dec.Decode(&entries); err != nil {
 			if err == io.EOF && entries == nil {
-				log.Println("Nothing to decode. Seems the file is empty.")
 				err = nil
 			} else {
 				err = errors.New(fmt.Sprintf("Decoding error: %v", err))
