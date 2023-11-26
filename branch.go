@@ -40,11 +40,12 @@ func (b *Branch) add(entry []byte) (addedBranch *Branch) {
 	if b.LeafValue == nil && len(b.Branches) == 0 {
 		if len(entry) > 0 {
 			b.LeafValue = entry
-		} else {
-			// something came in but we already have branches for it
-			// so the tail was the current branches index but no value
-			// to push. just mark the current idx position as End
 		}
+		// else {
+		//   something came in but we already have branches for it
+		//   so the tail was the current branches index but no value
+		//   to push. just mark the current idx position as End
+		// }
 		b.setEnd(true)
 		addedBranch = b
 		return
@@ -215,7 +216,7 @@ func (b *Branch) delete(entry []byte) (deleted bool) {
 		if len(b.Branches) == 0 && b.Count == 0 {
 			b.LeafValue = nil
 		} else if len(b.Branches) == 1 && b.Count == 0 {
-			b = b.pullUp()
+			b.pullUp()
 		}
 		return true
 	}
