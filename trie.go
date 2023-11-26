@@ -1,15 +1,10 @@
 package trie
 
 import (
-	"bufio"
-	"bytes"
 	"encoding/gob"
-	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
-	"time"
 )
 
 type Trie struct {
@@ -149,47 +144,34 @@ using encoding/gob.
 The Trie itself can currently not be encoded directly because gob does not
 directly support structs with a sync.Mutex on them.
 */
-func (t *Trie) DumpToFile(fname string) (err error) {
+func (t *Trie) DumpToFile(fname string) error {
 	t.Root.Lock()
 	entries := t.Members()
 	t.Root.Unlock()
 
-	buf := new(bytes.Buffer)
-	enc := gob.NewEncoder(buf)
-	if err = enc.Encode(entries); err != nil {
-		err = errors.New(fmt.Sprintf("Could encode Trie entries for dump file: %v", err))
-		return
-	}
-
 	f, err := os.Create(fname)
 	if err != nil {
-		err = errors.New(fmt.Sprintf("Could not save dump file: %v", err))
-		return
+		return fmt.Errorf("could not save dump file: %w", err)
 	}
 	defer f.Close()
 
-	w := bufio.NewWriter(f)
-	_, err = w.Write(buf.Bytes())
-	if err != nil {
-		err = errors.New(fmt.Sprintf("Error writing to dump file: %v", err))
-		return
+	enc := gob.NewEncoder(f)
+	if err := enc.Encode(entries); err != nil {
+		return fmt.Errorf("could encode Trie entries for dump file: %w", err)
+
 	}
-	// log.Printf("wrote %d bytes to dumpfile %s\n", bl, fname)
-	w.Flush()
-	return
+	return nil
 }
 
 /*
 MergeFromFile loads a gib encoded wordlist from a file and Add() them to the `Trie`.
 */
 // TODO: write tests for merge
-func (t *Trie) MergeFromFile(fname string) (err error) {
+func (t *Trie) MergeFromFile(fname string) error {
 	entries, err := loadTrieFile(fname)
 	if err != nil {
-		return
+		return err
 	}
-	log.Printf("Got %v entries\n", len(entries))
-	startTime := time.Now()
 	for _, mi := range entries {
 		b := t.GetBranch(mi.Value)
 		if b != nil {
@@ -203,51 +185,43 @@ func (t *Trie) MergeFromFile(fname string) (err error) {
 			b.Unlock()
 		}
 	}
-	log.Printf("merging words to index took: %v\n", time.Since(startTime))
-	return
+	return nil
 }
 
 /*
 LoadFromFile loads a gib encoded wordlist from a file and creates a new Trie
 by Add()ing all of them.
 */
-func LoadFromFile(fname string) (tr *Trie, err error) {
-	tr = NewTrie()
+func LoadFromFile(fname string) (*Trie, error) {
+	tr := NewTrie()
 	entries, err := loadTrieFile(fname)
 	if err != nil {
-		return
+		return tr, err
 	}
-	log.Printf("Got %v entries\n", len(entries))
-	startTime := time.Now()
 	for _, mi := range entries {
 		b := tr.Add(mi.Value)
 		b.Count = mi.Count
 	}
-	log.Printf("adding words to index took: %v\n", time.Since(startTime))
-
-	return
+	return tr, nil
 }
 
-func loadTrieFile(fname string) (entries []*MemberInfo, err error) {
-	log.Println("Load trie from", fname)
+func loadTrieFile(fname string) ([]*MemberInfo, error) {
 	f, err := os.Open(fname)
 	if err != nil {
-		err = errors.New(fmt.Sprintf("Could not open Trie file: %v", err))
-	} else {
-		defer f.Close()
+		return nil, fmt.Errorf("could not open Trie file: %w", err)
+	}
+	defer f.Close()
 
-		buf := bufio.NewReader(f)
-		dec := gob.NewDecoder(buf)
-		if err = dec.Decode(&entries); err != nil {
+	var entries []*MemberInfo
+	dec := gob.NewDecoder(f)
+	if err = dec.Decode(&entries); err != nil {
+		if err != nil {
 			if err == io.EOF && entries == nil {
-				log.Println("Nothing to decode. Seems the file is empty.")
-				err = nil
-			} else {
-				err = errors.New(fmt.Sprintf("Decoding error: %v", err))
-				return
+				return entries, nil
 			}
+			return entries, fmt.Errorf("decoding error: %w", err)
 		}
 	}
 
-	return
+	return entries, nil
 }
