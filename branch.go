@@ -248,10 +248,7 @@ func (b *Branch) delete(entry []byte) (deleted bool) {
 /*
  */
 func (b *Branch) has(entry []byte) bool {
-	if b.getBranch(entry) != nil {
-		return true
-	}
-	return false
+	return b.getBranch(entry) != nil
 }
 
 func (b *Branch) hasCount(entry []byte) (bool, int64) {
@@ -443,7 +440,6 @@ func (b *Branch) setEnd(flag bool) {
 		}
 	}
 	b.End = flag
-	return
 }
 
 func (b *Branch) String() string {

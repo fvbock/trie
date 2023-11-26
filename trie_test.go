@@ -900,6 +900,9 @@ func TestTrieDumpToFileLoadFromFile(t *testing.T) {
 		n++
 	}
 	err := tr.DumpToFile("testfiles/TestDumpToFileLoadFromFile")
+	if err != nil {
+		t.Error(err)
+	}
 
 	loadedTrie, err := LoadFromFile("testfiles/TestDumpToFileLoadFromFile")
 	if err != nil {
